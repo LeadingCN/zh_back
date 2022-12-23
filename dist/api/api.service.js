@@ -389,6 +389,7 @@ let ApiService = class ApiService {
                     msg.zid = zh[0].zid;
                 }
                 else {
+                    common_1.Logger.error('账号不存在');
                     throw new common_1.HttpException('账号不存在', 404);
                 }
                 let buff = Buffer.from(msg.pay_link, 'base64');
