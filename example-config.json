@@ -1,0 +1,18 @@
+{
+  "host": "127.0.0.1:3000",
+  "jwt": {
+    "expiresInTime": "30d",
+    "jwtSecret": "fuck_qq_very"
+  },
+  "sql": {
+    "connectionLimit": "5",
+    "host": "",
+    "port": "3306",
+    "user": "czxt",
+    "password": "Jc8DHRtM2fKJdkmC",
+    "database": "czxt"
+  },
+  "tempPath": "/www/wwwroot/qq_handler_back/public/temp",
+  "port": 3001,
+  "scriptPath": "/www/wwwroot/qq_handler_back"
+}
