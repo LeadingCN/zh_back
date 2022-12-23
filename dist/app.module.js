@@ -15,7 +15,6 @@ const path_1 = require("path");
 const utils_module_1 = require("./utils/utils.module");
 const auth_module_1 = require("./auth/auth.module");
 const admin_module_1 = require("./admin/admin.module");
-const example_module_1 = require("./example/example.module");
 const script_module_1 = require("./script/script.module");
 const socket_module_1 = require("./socket/socket.module");
 const zh_module_1 = require("./zh/zh.module");
@@ -34,7 +33,6 @@ AppModule = __decorate([
             utils_module_1.UtilsModule,
             auth_module_1.AuthModule,
             admin_module_1.AdminModule,
-            example_module_1.ExampleModule,
             script_module_1.ScriptModule,
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, '..', 'public'),

@@ -383,17 +383,18 @@ let ApiService = class ApiService {
             case 'savelink':
                 console.log(b);
                 let msg = b;
-                if (!msg.zid) {
-                    let zh = await this.sql.query(`select * from zh where zh = '${msg.zh}'`);
-                    if (zh[0]) {
-                        msg.zid = zh[0].zid;
-                    }
-                    else {
-                        throw new common_1.HttpException('账号不存在', 404);
-                    }
+                let zh = await this.sql.query(`select * from zh where zh = '${msg.zh}'`);
+                if (zh[0]) {
+                    msg.zid = zh[0].zid;
                 }
+                else {
+                    throw new common_1.HttpException('账号不存在', 404);
+                }
+                let buff = Buffer.from(msg.pay_link, 'base64');
+                const str = buff.toString('utf-8');
                 let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
-                await this.sql.query(`INSERT INTO paylink(zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${msg.zh}',${msg.quota},'${msg.pay_link}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
+                common_1.Logger.log("保存链接" + `INSERT INTO paylink(zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
+                await this.sql.query(`INSERT INTO paylink(zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
                 return 'ok';
             default:
                 break;

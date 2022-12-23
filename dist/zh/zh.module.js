@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const zh_service_1 = require("./zh.service");
 const zh_controller_1 = require("./zh.controller");
 const zhexecute_service_1 = require("./zhexecute.service");
+const sell_EX_1 = require("../sell_order/sell_EX");
 let ZhModule = class ZhModule {
 };
 ZhModule = __decorate([
     (0, common_1.Module)({
         controllers: [zh_controller_1.ZhController],
-        providers: [zh_service_1.ZhService, zhexecute_service_1.ZhExecuteService]
+        providers: [zh_service_1.ZhService, zhexecute_service_1.ZhExecuteService, sell_EX_1.SellEXService]
     })
 ], ZhModule);
 exports.ZhModule = ZhModule;

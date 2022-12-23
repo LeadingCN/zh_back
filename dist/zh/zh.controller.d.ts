@@ -8,6 +8,7 @@ export declare class ZhController {
         total: any;
         list: any;
     }>;
+    checkzh(): Promise<string>;
     up(body: any): Promise<string>;
     gettask(query: any): Promise<any>;
     checktask(query: any): Promise<any>;

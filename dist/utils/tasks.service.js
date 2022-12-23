@@ -87,7 +87,7 @@ let TasksService = class TasksService {
                 };
                 let checkZH = [
                     `SET @uids := null;`,
-                    `UPDATE zh SET balance = balance - ${Number(s_order.quota) * 100} ,	balance_lock = 1,lock_time = now() WHERE is_delete = 0 AND balance - ${s_order.quota * 100} > 0 AND 	balance_lock = 0  AND  ( SELECT @uids := CONCAT_WS(',', id, @uids)) LIMIT 1 ;`,
+                    `UPDATE zh SET balance = balance - ${Number(s_order.quota) * 100} ,	balance_lock = 1,lock_time = now() WHERE is_delete = 0 AND balance - ${s_order.quota * 100} > 0 AND 	balance_lock = 0 AND enable = 1  AND  ( SELECT @uids := CONCAT_WS(',', id, @uids)) LIMIT 1 ;`,
                     `SELECT * FROM zh WHERE id IN (@uids) ;`,
                 ];
                 let zh = await this.sql.transaction(checkZH);

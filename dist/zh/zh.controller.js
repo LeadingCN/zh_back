@@ -27,6 +27,9 @@ let ZhController = class ZhController {
     async findAll(query) {
         return await this.zhService.findAll(query);
     }
+    async checkzh() {
+        return await this.zhService.checkzh();
+    }
     async up(body) {
         return await this.zhService.up(body);
     }
@@ -56,6 +59,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ZhController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('checkzh'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ZhController.prototype, "checkzh", null);
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('zhup'),

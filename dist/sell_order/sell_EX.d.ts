@@ -14,5 +14,6 @@ export declare class SellEXService {
     private readonly NOZH;
     private processLs;
     create(body: SellOrder, zh: ZH): Promise<any>;
+    createProm(body: SellOrder, zh: ZH): Promise<unknown>;
     killprocess(zh: any): any;
 }

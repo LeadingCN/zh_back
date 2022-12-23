@@ -16,12 +16,14 @@ const path_1 = require("path");
 const fsp = require("fs/promises");
 const zhexecute_service_1 = require("./zhexecute.service");
 const utils_service_1 = require("../utils/utils.service");
+const sell_EX_1 = require("../sell_order/sell_EX");
 const TEMPPATH = require('../../config.json').tempPath;
 let ZhService = class ZhService {
-    constructor(sql, ex, utils) {
+    constructor(sql, ex, utils, sell_EX) {
         this.sql = sql;
         this.ex = ex;
         this.utils = utils;
+        this.sell_EX = sell_EX;
         this.zh_table = "zh";
     }
     async create(body) {
@@ -89,6 +91,23 @@ let ZhService = class ZhService {
         }
         return 'ok';
     }
+    async checkzh() {
+        this.checkzhScript();
+        return 'ok';
+    }
+    async checkzhScript() {
+        let zh = await this.sql.query(`SELECT * FROM ${this.zh_table} WHERE is_delete = 0 `);
+        for (let i = 0; i < zh.length; i++) {
+            await this.sell_EX.createProm({
+                top_zh: '1403984237',
+                game_type: 'DNF',
+                game_qu: '1',
+                quota: 1,
+                merchant_id: 999,
+                sellid: 999999
+            }, zh[i]);
+        }
+    }
     async gettask(query) {
         if (query.action == 'get') {
             let arr = [
@@ -122,7 +141,7 @@ let ZhService = class ZhService {
 };
 ZhService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [mysql_service_1.MysqlService, zhexecute_service_1.ZhExecuteService, utils_service_1.UtilsService])
+    __metadata("design:paramtypes", [mysql_service_1.MysqlService, zhexecute_service_1.ZhExecuteService, utils_service_1.UtilsService, sell_EX_1.SellEXService])
 ], ZhService);
 exports.ZhService = ZhService;
 //# sourceMappingURL=zh.service.js.map

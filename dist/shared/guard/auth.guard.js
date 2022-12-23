@@ -19,7 +19,7 @@ let JwtAuthGuard = class JwtAuthGuard {
         this.reflector = reflector;
         this.auth = auth;
         this.urlList = ['/auth/login', '/', '/user', '/example/getlist', '/example/transaction', '/script/update', '/script/myupdate', '/script/config', '/admin/upfilename',
-            "/top-order/create", "/sell-order/create", "/zh/gettask", "/zh/checktask", '/zh/upaqcode', '/sell-order/orderresult', '/api/pay', '/api/pay/query', '/auth/user/login', '/api/user/update', '/api/getpayurl', '/api/getonecreate'];
+            "/top-order/create", "/sell-order/create", "/zh/gettask", "/zh/checktask", '/zh/upaqcode', '/sell-order/orderresult', '/api/pay', '/api/pay/query', '/auth/user/login', '/api/user/update', '/api/getpayurl', '/api/getonecreate', '/zh/checkzh'];
     }
     canActivate(context) {
         const { url, query } = context.switchToHttp().getRequest();
