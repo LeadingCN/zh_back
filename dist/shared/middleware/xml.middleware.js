@@ -10,7 +10,6 @@ exports.XMLMiddleware = void 0;
 const common_1 = require("@nestjs/common");
 let XMLMiddleware = class XMLMiddleware {
     use(req, res, next) {
-        common_1.Logger.log(`${req.url} 的 请求参数 ${req.method == 'GET' ? JSON.stringify(req.query) : JSON.stringify(req.body)}`);
         next();
     }
 };
