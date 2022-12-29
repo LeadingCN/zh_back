@@ -17,21 +17,23 @@ const common_1 = require("@nestjs/common");
 const zh_service_1 = require("./zh.service");
 const create_zh_dto_1 = require("./dto/create-zh.dto");
 const passport_1 = require("@nestjs/passport");
+const role_enum_1 = require("../shared/enums/role.enum");
+const roles_decorator_1 = require("../shared/decorator/roles.decorator");
 let ZhController = class ZhController {
     constructor(zhService) {
         this.zhService = zhService;
     }
-    async create(createZhDto) {
-        return await this.zhService.create(createZhDto);
+    async create(createZhDto, req) {
+        return await this.zhService.create(createZhDto, req.user);
     }
-    async findAll(query) {
-        return await this.zhService.findAll(query);
+    async findAll(query, req) {
+        return await this.zhService.findAll(query, req.user);
     }
     async checkzh() {
         return await this.zhService.checkzh();
     }
-    async up(body) {
-        return await this.zhService.up(body);
+    async up(body, req) {
+        return await this.zhService.up(body, req.user);
     }
     async gettask(query) {
         return await this.zhService.gettask(query);
@@ -46,17 +48,21 @@ let ZhController = class ZhController {
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('zhcreate'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_zh_dto_1.CreateZhDto]),
+    __metadata("design:paramtypes", [create_zh_dto_1.CreateZhDto, Object]),
     __metadata("design:returntype", Promise)
 ], ZhController.prototype, "create", null);
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Get)('list'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], ZhController.prototype, "findAll", null);
 __decorate([
@@ -68,9 +74,11 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('zhup'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], ZhController.prototype, "up", null);
 __decorate([

@@ -17,6 +17,7 @@ const fsp = require("fs/promises");
 const zhexecute_service_1 = require("./zhexecute.service");
 const utils_service_1 = require("../utils/utils.service");
 const sell_EX_1 = require("../sell_order/sell_EX");
+var { escape } = require('mysql');
 const TEMPPATH = require('../../config.json').tempPath;
 let ZhService = class ZhService {
     constructor(sql, ex, utils, sell_EX) {
@@ -26,7 +27,7 @@ let ZhService = class ZhService {
         this.sell_EX = sell_EX;
         this.zh_table = "zh";
     }
-    async create(body) {
+    async create(body, user) {
         let fp = (0, path_1.join)(TEMPPATH, body.filenamelist[0].filename);
         let fd = await fsp.readFile(fp);
         let cookieArray = fd.toString().split('\r\n');
@@ -37,61 +38,64 @@ let ZhService = class ZhService {
             let zh = e.split('----');
             if (zh && zh[1]) {
                 let zuid = this.utils.zhguid();
-                datasql.push(`('${zh[0]}','${zh[1]}','${zuid}')`);
+                zh[0] = this.clearData(zh[0]);
+                zh[1] = this.clearData(zh[1]);
+                datasql.push(`('${zh[0]}','${zh[1]}','${zuid}','${user.uid}')`);
             }
             else {
                 error.push(i);
             }
         });
-        await this.sql.query(`INSERT ignore INTO ${this.zh_table}(zh,cookie,zid) VALUE ${datasql.join(',')}`);
+        await this.sql.query(`INSERT ignore INTO ${this.zh_table}(zh,cookie,zid,uid) VALUE ${datasql.join(',')}`);
         return error.length > 0 ? error : 'ok';
     }
-    async findAll(params) {
-        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_table} WHERE zh LIKE '%${params.keyword ? params.keyword : ''}%' AND is_delete = 0`);
-        let r = await this.sql.query(`SELECT * FROM ${this.zh_table} WHERE zh LIKE '%${params.keyword ? params.keyword : ''}%' AND is_delete = 0  LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
+    async findAll(params, user) {
+        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_table} WHERE zh LIKE '%${params.keyword ? params.keyword : ''}%' AND is_delete = 0 
+      ${this.isAdmin(user)}
+      `);
+        let r = await this.sql.query(`SELECT * FROM ${this.zh_table} WHERE zh LIKE '%${params.keyword ? params.keyword : ''}%' AND is_delete = 0  
+       ${this.isAdmin(user)}
+      LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
         return {
             total: total[0].count,
             list: r,
         };
     }
-    async up(body) {
+    async up(body, user) {
         console.log(body);
+        if (body.list) {
+            body.list = body.list.split(',');
+        }
+        await this.isSelf(body, user);
+        let whosql = ``;
+        if (body.list) {
+            whosql = `zid in ('${body.list.join("','")}')`;
+        }
+        else {
+            whosql = `zid = '${body.zid}'`;
+        }
         if (body.action == 'del') {
-            let whosql = ``;
-            if (body.list) {
-                whosql = `id in (${body.list.join(',')})`;
-            }
-            else {
-                whosql = `id = ${body.id}`;
-            }
             await this.sql.query(`UPDATE ${this.zh_table} SET is_delete = 1 WHERE  ${whosql}`);
         }
         else if (body.action == 'quota') {
-            let whosql = ``;
-            if (body.list) {
-                whosql = `id in (${body.list.join(',')})`;
-            }
-            else {
-                whosql = `id = ${body.id}`;
-            }
-            console.log(`UPDATE ${this.zh_table} SET quota = ${Number(body.quota) * 100} WHERE  ${whosql}`);
             await this.sql.query(`UPDATE ${this.zh_table} SET quota = ${body.quota} WHERE  ${whosql}`);
         }
         else if (body.action == 'enable') {
-            await this.sql.query(`UPDATE ${this.zh_table} SET enable = ${body.enable} WHERE id = ${body.id}`);
+            await this.sql.query(`UPDATE ${this.zh_table} SET enable = ${body.enable} WHERE zid = '${body.zid}'`);
         }
         else if (body.action == 'cookie') {
-            await this.sql.query(`UPDATE ${this.zh_table} SET cookie = ${body.cookie} WHERE id = ${body.id}`);
+            await this.sql.query(`UPDATE ${this.zh_table} SET cookie = '${body.cookie}' WHERE zid = '${body.zid}'`);
         }
         else if (body.action == 'upquotaall') {
-            await this.ex.upquota('all', body);
+            await this.ex.upquota('all', body, user);
         }
         else if (body.action == 'upquota') {
-            await this.ex.upquota('upquota', body);
+            await this.ex.upquota('upquota', body, user);
         }
         return 'ok';
     }
     async checkzh() {
+        return;
         this.checkzhScript();
         return 'ok';
     }
@@ -137,6 +141,42 @@ let ZhService = class ZhService {
         common_1.Logger.log(`${query.zh} aq_code:${query.code}`);
         await this.sql.query(`UPDATE zh SET aq_code = '${query.code}',aq_code_is_use = 0,aq_code_last_up_time	=now() WHERE zh = '${query.zh}'`);
         return 'ok';
+    }
+    isAdmin(user) {
+        if (user.roles == 'admin')
+            return '';
+        return ` AND uid = '${user.uid}'`;
+    }
+    async isSelf(body, user) {
+        let r = [];
+        if (body.list) {
+            r = await this.sql.query(`SELECT uid FROM zh WHERE zid in ('${body.list.join("','")}')`);
+            if (!r[0])
+                return;
+            for (let i = 0; i < r.length; i++) {
+                if (r[i].uid != user.uid && user.roles != 'admin') {
+                    common_1.Logger.error(` ${user.username} 执行 非法操作 zid:${body.list.join(',')} `);
+                    throw new common_1.HttpException('请求失败', 400);
+                }
+            }
+        }
+        else {
+            r = await this.sql.query(`SELECT uid FROM zh WHERE zid = '${body.zid}'`);
+            if (r[0] && r[0].uid != user.uid && user.roles != 'admin') {
+                common_1.Logger.error(` ${user.username} 执行 非法操作 zid:${body.zid} `);
+                throw new common_1.HttpException('请求失败', 400);
+            }
+        }
+    }
+    clearData(data) {
+        data = data.toString().replace(/\s+/g, '');
+        let num = Number(data);
+        if (isNaN(num)) {
+            data = escape(data);
+            data = data.toString().replace(/'/g, '');
+            data = data.toString().replace(/--|select|update|delete|insert|from/g, '');
+        }
+        return data;
     }
 };
 ZhService = __decorate([

@@ -4,6 +4,12 @@ export declare class Admin {
     password: string;
     note: string;
 }
+export declare class UserToken {
+    username: string;
+    uid: number;
+    roles: string;
+    lv: number;
+}
 export declare class StaticTotal {
     topordertodaytotal: string;
     toporderyesterdaytotal: string;
@@ -21,4 +27,16 @@ export declare class StaticTotal {
 export declare class Setting {
     action: string;
     data: any;
+}
+export declare class ProxyUserDto {
+    username: string;
+    password: string;
+    nickName: string;
+    rate: number;
+}
+export declare class ProxyUserUpdate {
+    action: string;
+    quota: number;
+    uid: string;
+    rate: number;
 }

@@ -13,7 +13,13 @@ const top_order_controller_1 = require("./top_order.controller");
 const top_EX_1 = require("./top_EX");
 const zhexecute_service_1 = require("../zh/zhexecute.service");
 const api_service_1 = require("../api/api.service");
+const mysql_middleware_1 = require("../shared/middleware/mysql.middleware");
 let TopOrderModule = class TopOrderModule {
+    configure(consumer) {
+        consumer
+            .apply(mysql_middleware_1.MysqlMiddleware)
+            .forRoutes({ path: 'top-order/*', method: common_1.RequestMethod.ALL });
+    }
 };
 TopOrderModule = __decorate([
     (0, common_1.Module)({

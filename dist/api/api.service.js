@@ -365,10 +365,8 @@ let ApiService = class ApiService {
         return 'ok';
     }
     async getonecreate(b, user) {
-        common_1.Logger.log(JSON.stringify(b) + '  getonecreate  ' + JSON.stringify(user));
         if (!user)
             throw new common_1.HttpException('请先登录', 401);
-        common_1.Logger.log('过了登录验证');
         let { action } = b;
         let result = null;
         switch (action) {

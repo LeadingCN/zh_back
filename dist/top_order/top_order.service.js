@@ -46,8 +46,9 @@ let TopOrderService = class TopOrderService {
         }
         return { code };
     }
-    async findAll(params) {
+    async findAll(params, user) {
         let { zid, keyword, pageNum, pageSize, queryType, zhmark, dateArray, channel, merchant_id } = params;
+        common_1.Logger.log(dateArray);
         let zidsql = '';
         if (zid) {
             zidsql = ` AND zid LIKE '%${zid}%'`;
@@ -70,21 +71,26 @@ let TopOrderService = class TopOrderService {
         }
         let createsql = '';
         if (dateArray) {
+            dateArray = dateArray.split(',');
             createsql = ` AND unix_timestamp(create_time) > unix_timestamp('${this.utils.dayjsDate(dateArray[0]).format('YYYY-MM-DD HH:mm:ss')}') AND unix_timestamp(create_time) <= unix_timestamp('${this.utils.dayjsDate(dateArray[1]).format('YYYY-MM-DD HH:mm:ss')}')`;
         }
-        let total = await this.sql.query(`SELECT count(1) AS count,SUM(quota) AS quotatotal FROM ${this.order_talbe} WHERE zh LIKE '%${keyword ? keyword : ''}%' ${zidsql} ${queryTypesql} ${zhmarksql} ${createsql} ${channelsql} ${merchantidsql}`);
+        let total = await this.sql.query(`SELECT count(1) AS count,SUM(quota) AS quotatotal FROM ${this.order_talbe} WHERE zh LIKE '%${keyword ? keyword : ''}%' AND is_delete = 0 ${zidsql} ${queryTypesql} ${zhmarksql} ${createsql} ${channelsql} ${merchantidsql} 
+      ${this.isAdmin(user)};
+      `);
         let r = await this.sql.query(`SELECT * FROM ${this.order_talbe} WHERE (tid LIKE '%${keyword ? keyword : ''}%' or oid LIKE '%${keyword ? keyword : ''}%' or mer_orderId LIKE '%${keyword ? keyword : ''}%')
+      AND is_delete = 0
       ${zidsql}
       ${queryTypesql}
       ${zhmarksql}
       ${createsql}
       ${channelsql}
       ${merchantidsql}
+       ${this.isAdmin(user)}
        ORDER BY create_time DESC
       LIMIT ${(pageNum - 1) * pageSize},${pageSize}`);
         return {
             total: total[0].count,
-            quotatotal: total[0].quotatotal,
+            quotatotal: total[0].quotatotal ? total[0].quotatotal : 0,
             list: r,
         };
     }
@@ -112,16 +118,14 @@ let TopOrderService = class TopOrderService {
         }
     }
     async checkorder(query, user) {
+        let { tid, merchant_id } = query;
         if (!query.tid) {
-            new common_1.HttpException('tid不能为空', 400);
+            new common_1.HttpException('订单号不能为空', 400);
         }
+        let r = await this.isSelf(query, user);
         let meridsql = '';
         if (user.roles != 'admin') {
-            meridsql = ` AND merchant_id = ${user.uid}`;
-        }
-        let r = await this.sql.query(`SELECT * FROM top_order WHERE  tid = '${query.tid}' ${meridsql}`);
-        if (!r[0]) {
-            new common_1.HttpException('查询出错,tid错误', 400);
+            meridsql = ` AND merchant_id = ${merchant_id}`;
         }
         let yan = '', merId;
         if (r[0].merchant_id != '1') {
@@ -142,7 +146,7 @@ let TopOrderService = class TopOrderService {
                 attch: '1'
             };
             await this.api.notifyRequest(r[0].mer_notifyUrl, tNotify, yan);
-            await this.sql.query(`UPDATE paylink SET result = -1, create_status = -1 WHERE oid = '${r[0].oid}'`);
+            await this.sql.query(`UPDATE paylink SET result = -1, create_status = -1 WHERE oid = '${r[0].oid}' ${this.isAdmin(user)}`);
             return 'ok';
         }
         else {
@@ -157,8 +161,8 @@ let TopOrderService = class TopOrderService {
             let translist = await this.zhEX.checktranslist(openid, openkey, r[0].zh);
             if (translist.indexOf(r[0].oid) > -1) {
                 let arr = [
-                    `UPDATE top_order SET result = 1,err_info='支付到账' WHERE tid = '${query.tid}'`,
-                    `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${query.tid}')b ON a.oid = b.oid  SET result = 1,tid = '${query.tid}'  `
+                    `UPDATE top_order SET result = 1,err_info='支付到账' WHERE tid = '${query.tid}' ${this.isAdmin(user)}`,
+                    `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${query.tid}' ${this.isAdmin(user)} )b ON a.oid = b.oid  SET result = 1,tid = '${query.tid}'  `
                 ];
                 await this.sql.transaction(arr);
                 let ispay = 1;
@@ -179,14 +183,45 @@ let TopOrderService = class TopOrderService {
         }
         return { code: -1, msg: "服务器出错" };
     }
-    findOne(id) {
-        return `This action returns a #${id} topOrder`;
+    async deleteOrder(body, user) {
+        common_1.Logger.log(body);
+        let { tid, list } = body;
+        if (tid) {
+            if (user.roles != 'admin') {
+                await this.sql.query(`UPDATE top_order SET is_delete = 1 WHERE tid = '${body.tid}' ${this.isAdmin(user)}`);
+            }
+            else if (user.roles == 'admin') {
+                await this.sql.query(`DELETE FROM top_order WHERE tid = '${body.tid}'`);
+            }
+        }
+        else if (list) {
+            list = list.split(',');
+            if (user.roles != 'admin') {
+                await this.sql.query(`UPDATE top_order SET is_delete = 1 WHERE tid in ('${list.join("','")}') ${this.isAdmin(user)}`);
+            }
+            else if (user.roles == 'admin') {
+                await this.sql.query(`DELETE FROM top_order WHERE tid in  ('${list.join("','")}')`);
+            }
+        }
+        return 'ok';
     }
-    update(id, updateTopOrderDto) {
-        return `This action updates a #${id} topOrder`;
+    isAdmin(user) {
+        if (user.roles == 'admin')
+            return '';
+        return ` AND uid = '${user.uid}'`;
     }
-    remove(id) {
-        return `This action removes a #${id} topOrder`;
+    async isSelf(query, user) {
+        let r = await this.sql.query(`SELECT * FROM top_order WHERE tid = '${query.tid}' ${this.isAdmin(user)}`);
+        if (r[0]) {
+            if (r[0].uid == user.uid)
+                return r;
+            if (user.roles == 'admin')
+                return r;
+            throw new common_1.HttpException('无权限', 400);
+        }
+        else {
+            throw new common_1.HttpException('订单不存在', 400);
+        }
     }
 };
 TopOrderService = __decorate([

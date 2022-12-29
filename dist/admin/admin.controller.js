@@ -21,11 +21,13 @@ const role_enum_1 = require("../shared/enums/role.enum");
 const validation_pipe_1 = require("../shared/pipe/validation.pipe");
 const admin_service_1 = require("./admin.service");
 const admin_dto_1 = require("./dto/admin.dto");
+const proxyuser_service_1 = require("./proxyuser.service");
 const user_service_1 = require("./user.service");
 let AdminController = class AdminController {
-    constructor(adminService, userService) {
+    constructor(adminService, userService, proxyUser) {
         this.adminService = adminService;
         this.userService = userService;
+        this.proxyUser = proxyUser;
     }
     async info(req) {
         return this.adminService.info(req.user);
@@ -33,8 +35,8 @@ let AdminController = class AdminController {
     async list() {
         return this.adminService.list();
     }
-    async statictotal() {
-        return this.adminService.statictotal();
+    async statictotal(req) {
+        return this.adminService.statictotal(req.user);
     }
     async create(body) {
         return this.adminService.create(body);
@@ -49,8 +51,8 @@ let AdminController = class AdminController {
     async repass(body, req) {
         return this.adminService.repass(body, req.user);
     }
-    async upfilename(file) {
-        return this.adminService.upfilename(file);
+    async upfilename(file, req) {
+        return this.adminService.upfilename(file, req.user);
     }
     async setting(body) {
         return this.adminService.setting(body);
@@ -63,6 +65,18 @@ let AdminController = class AdminController {
     }
     async topuserupdate(body) {
         return this.userService.topuserupdate(body);
+    }
+    async proxyFindAll(query, req) {
+        return this.proxyUser.findAll(query, req.user);
+    }
+    async proxycreateuser(body, req) {
+        return this.proxyUser.createuser(body, req.user);
+    }
+    async proxyuserupdate(body, req) {
+        return this.proxyUser.updateuser(body, req.user);
+    }
+    async proxyuserdelete(body, req) {
+        return this.proxyUser.deleteuser(body, req.user);
     }
 };
 __decorate([
@@ -84,9 +98,10 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Get)('statictotal'),
-    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
+    __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "statictotal", null);
 __decorate([
@@ -126,11 +141,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "repass", null);
 __decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('/upfilename'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "upfilename", null);
 __decorate([
@@ -169,9 +186,49 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "topuserupdate", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Get)('proxyuserlist'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "proxyFindAll", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('proxyusercreate'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
+    __param(0, (0, common_1.Body)(new validation_pipe_1.ValidationPipe())),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.ProxyUserDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "proxycreateuser", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('proxyuserupdate'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.ProxyUserUpdate, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "proxyuserupdate", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('proxyuserdelete'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "proxyuserdelete", null);
 AdminController = __decorate([
     (0, common_1.Controller)('admin'),
-    __metadata("design:paramtypes", [admin_service_1.AdminService, user_service_1.UserService])
+    __metadata("design:paramtypes", [admin_service_1.AdminService, user_service_1.UserService, proxyuser_service_1.ProxyUserService])
 ], AdminController);
 exports.AdminController = AdminController;
 //# sourceMappingURL=admin.controller.js.map

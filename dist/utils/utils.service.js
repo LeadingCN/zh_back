@@ -18,6 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const md5 = require('md5');
 const dayjs = require('dayjs');
+const { v4: uuidv4 } = require('uuid');
 let UtilsService = class UtilsService {
     constructor(redis, sql) {
         this.redis = redis;
@@ -48,6 +49,9 @@ let UtilsService = class UtilsService {
     }
     HTTPGET(url) {
     }
+    uuid() {
+        return uuidv4();
+    }
     guid(t, q) {
         let now = new Date().getTime();
         let str = t + `xxxxxxxxx${now}y` + q.toString().padStart(3, '0');
@@ -64,6 +68,16 @@ let UtilsService = class UtilsService {
             var v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         }).toLocaleUpperCase();
+    }
+    clearData(data) {
+        data = data.toString().replace(/\s+/g, '');
+        let num = Number(data);
+        if (isNaN(num)) {
+            data = escape(data);
+            data = data.toString().replace(/'/g, '');
+            data = data.toString().replace(/--|select|update|delete|insert|from/g, '');
+        }
+        return data;
     }
     async getsetcache(key, time) {
         let open = await this.redis.get(key);

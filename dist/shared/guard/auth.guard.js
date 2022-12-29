@@ -18,7 +18,7 @@ let JwtAuthGuard = class JwtAuthGuard {
     constructor(reflector, auth) {
         this.reflector = reflector;
         this.auth = auth;
-        this.urlList = ['/auth/login', '/', '/user', '/example/getlist', '/example/transaction', '/script/update', '/script/myupdate', '/script/config', '/admin/upfilename',
+        this.urlList = ['/auth/login', '/', '/user', '/example/getlist', '/script/update', '/script/myupdate', '/script/config',
             "/top-order/create", "/sell-order/create", "/zh/gettask", "/zh/checktask", '/zh/upaqcode', '/sell-order/orderresult', '/api/pay', '/api/pay/query', '/auth/user/login', '/api/user/update', '/api/getpayurl', '/api/getonecreate', '/zh/checkzh'];
     }
     canActivate(context) {
@@ -49,7 +49,6 @@ let JwtAuthGuard = class JwtAuthGuard {
                 console.log("解析的user", user);
                 const roles = this.reflector.get('roles', context.getHandler());
                 const requiredRoles = this.reflector.getAllAndOverride(roles_decorator_1.ROLES_KEY, [context.getHandler(), context.getClass()]);
-                console.log("接口需要roles:", roles, "用户roles:", user.roles);
                 if (user.roles == 'admin' || !roles) {
                     return true;
                 }
@@ -60,8 +59,8 @@ let JwtAuthGuard = class JwtAuthGuard {
                             flag = true;
                         }
                     });
-                    console.log(flag);
                     if (!flag) {
+                        common_1.Logger.error(`${user ? " 用户:" + user.username : "unknow "}  非法访问: ${url} ` + "接口需要roles:" + roles + "用户roles:" + user.roles);
                         throw new common_1.HttpException('没有权限', common_1.HttpStatus.UNAUTHORIZED);
                     }
                     else {

@@ -6,7 +6,7 @@ export declare class TopOrderController {
     create(createTopOrderDto: TopOrder, req: any): Promise<{
         code: number;
     }>;
-    findAll(query: QueryList): Promise<{
+    findAll(query: QueryList, req: any): Promise<{
         total: any;
         quotatotal: any;
         list: any;
@@ -26,4 +26,5 @@ export declare class TopOrderController {
         code: number;
         msg: string;
     }>;
+    deleteorder(body: any, req: any): Promise<string>;
 }

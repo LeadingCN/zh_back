@@ -22,9 +22,9 @@ let ZhExecuteService = class ZhExecuteService {
         this.sql = sql;
         this.zh_table = "zh";
     }
-    async upquota(action, body) {
+    async upquota(action, body, user) {
         if (action == 'all') {
-            let z = await this.sql.query(`SELECT zh,cookie FROM zh`);
+            let z = await this.sql.query(`SELECT zh,cookie FROM zh WHERE is_delete = 0 ${user === 0 ? '' : `AND uid = '${user.uid}'`}`);
             for (let i = 0; i < z.length; i++) {
                 let openid = z[i].cookie.match(/midas_txcz_openid=([a-z,A-Z,0-9]+)/)[1];
                 let openkey = z[i].cookie.match(/midas_txcz_openkey=([a-z,A-Z,0-9]+)/)[1];
@@ -32,7 +32,7 @@ let ZhExecuteService = class ZhExecuteService {
             }
         }
         else {
-            let z = await this.sql.query(`SELECT zh,cookie FROM zh WHERE id = ${body.id}`);
+            let z = await this.sql.query(`SELECT zh,cookie FROM zh WHERE zid = '${body.zid}'`);
             if (z[0]) {
                 let openid = z[0].cookie.match(/midas_txcz_openid=([a-z,A-Z,0-9]+)/)[1];
                 let openkey = z[0].cookie.match(/midas_txcz_openkey=([a-z,A-Z,0-9]+)/)[1];

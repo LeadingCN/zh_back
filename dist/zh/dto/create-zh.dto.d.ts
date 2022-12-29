@@ -6,14 +6,14 @@ export declare class UpFileDto {
     filename: string;
 }
 export declare class ZhDto {
-    id: number;
+    zid: string;
     zh: string;
     cookie: string;
     quota: number;
     enable: number;
     is_delete: number;
     action: string;
-    list: Array<ZhDto>;
+    list: any;
 }
 export declare class ZhDtoList {
     id: number;

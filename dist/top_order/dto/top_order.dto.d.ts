@@ -7,7 +7,7 @@ export declare class QueryList {
     queryType: string;
     zhmark: string;
     channel: string;
-    dateArray: Array<any>;
+    dateArray: any;
 }
 export declare class TopOrder {
     quota: number;

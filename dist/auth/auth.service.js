@@ -30,8 +30,9 @@ let AuthService = class AuthService {
     async login(user) {
         const payload = {
             username: user.username,
-            uid: user.id,
+            uid: user.uid,
             roles: user.roles,
+            lv: user.lv,
         };
         if (user.roles == 'admin') {
             return {

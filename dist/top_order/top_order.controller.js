@@ -24,14 +24,17 @@ let TopOrderController = class TopOrderController {
     async create(createTopOrderDto, req) {
         return await this.topOrderService.create(createTopOrderDto, req.user);
     }
-    async findAll(query) {
-        return await this.topOrderService.findAll(query);
+    async findAll(query, req) {
+        return await this.topOrderService.findAll(query, req.user);
     }
     async getlink(query, req) {
         return await this.topOrderService.getlink(query, req.user);
     }
     async checkorder(query, req) {
         return await this.topOrderService.checkorder(query, req.user);
+    }
+    async deleteorder(body, req) {
+        return await this.topOrderService.deleteOrder(body, req.user);
     }
 };
 __decorate([
@@ -46,8 +49,9 @@ __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Get)('list'),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [top_order_dto_1.QueryList]),
+    __metadata("design:paramtypes", [top_order_dto_1.QueryList, Object]),
     __metadata("design:returntype", Promise)
 ], TopOrderController.prototype, "findAll", null);
 __decorate([
@@ -68,6 +72,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], TopOrderController.prototype, "checkorder", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('deleteorder'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], TopOrderController.prototype, "deleteorder", null);
 TopOrderController = __decorate([
     (0, common_1.Controller)('top-order'),
     __metadata("design:paramtypes", [top_order_service_1.TopOrderService])

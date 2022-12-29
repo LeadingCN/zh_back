@@ -36,21 +36,37 @@ let AdminService = class AdminService {
         this.redis = redis;
     }
     async info(user) {
+        common_1.Logger.log(`用户信息:${user.username} 登录 ${this.utils.dayjs().format("YYYY-MM-DD HH:mm:ss")}`);
+        let resultmenus = [];
         if (user.roles == 'selluser' || user.rolese == 'topuser') {
             common_1.Logger.error(`${user.username}请求登录后台,id:${user.uid}`);
             throw new common_1.HttpException('账号密码错误', 400);
         }
         else {
-            let roles = await this.sql.query(`SELECT roles FROM adminuser WHERE id = ${user.uid}`);
-            if (roles[0].roles == 'user') {
-                var roleslist = await this.sql.query(`SELECT menuslist FROM role WHERE name = '${roles[0].roles}'`);
+            let roles = await this.sql.query(`SELECT roles,quota,rate,lv,uprate FROM adminuser WHERE uid = '${user.uid}' and is_delete = 0`);
+            if (!roles[0]) {
+                common_1.Logger.error(`${user.username}请求登录后台但后台无该用户数据,id:${user.uid}`);
+                throw new common_1.HttpException('账号密码错误', 400);
+            }
+            else if (roles[0].roles == 'user' || roles[0].roles == 'proxyuser') {
+                var roleslist = await this.sql.query(`SELECT menuslist FROM roles WHERE name = '${roles[0].roles}'`);
                 var menus = await this.sql.query(`SELECT * FROM menus WHERE id in (${roleslist[0].menuslist})`);
+                if (user.lv > 2) {
+                    resultmenus = menus.filter(item => item.id <= 6);
+                }
+                else {
+                    resultmenus = menus;
+                }
             }
             return {
                 icon: 'http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/images/20180607/timg.jpg',
-                menus: menus,
+                menus: resultmenus,
                 roles: roles[0].roles,
                 username: user.username,
+                quota: roles[0].quota,
+                rate: roles[0].rate,
+                uprate: roles[0].uprate,
+                lv: roles[0].lv,
             };
         }
     }
@@ -58,23 +74,27 @@ let AdminService = class AdminService {
         let result = await this.sql.query(`SELECT username,createTime,note FROM adminuser WHERE is_delete = 0`);
         return result;
     }
-    async statictotal() {
+    async statictotal(user) {
+        let uidsql = '';
+        if (user.roles != 'admin') {
+            uidsql = ` AND uid = '${user.uid}'`;
+        }
         let result = null;
-        let statictotal = await this.redis.get('statictotal');
+        let statictotal = await this.redis.get('statictotal' + user.uid);
         if (statictotal) {
             result = JSON.parse(statictotal);
         }
         else {
-            let ztotal = await this.sql.query(`SELECT COUNT(*) AS total,SUM(balance) AS toptotal FROM zh WHERE is_delete =0 `);
+            let ztotal = await this.sql.query(`SELECT COUNT(*) AS total,SUM(balance) AS toptotal FROM zh WHERE is_delete =0 ${uidsql}`);
             let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
-            let stocklinktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND create_status = 1;`);
-            let linktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND  lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1;`);
-            let stocklinktotalclass = await this.sql.query(`SELECT quota,COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND create_status = 1 GROUP BY quota ;`);
-            let linktotalclass = await this.sql.query(`SELECT quota,COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND  lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1 GROUP BY quota;`);
-            let toptodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 AND channel = 1`);
-            let topyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 AND channel = 1`);
-            let paytodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 `);
-            let payyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 `);
+            let stocklinktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND create_status = 1 ${uidsql};`);
+            let linktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND  lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1 ${uidsql};`);
+            let stocklinktotalclass = await this.sql.query(`SELECT quota,COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND create_status = 1 ${uidsql} GROUP BY quota ;`);
+            let linktotalclass = await this.sql.query(`SELECT quota,COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND  lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1 ${uidsql} GROUP BY quota ;`);
+            let toptodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 AND channel = 1 ${uidsql}`);
+            let topyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 AND channel = 1 ${uidsql}`);
+            let paytodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 ${uidsql}`);
+            let payyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 ${uidsql}`);
             result = {
                 zhtotal: ztotal[0].total,
                 toptotal: ztotal[0].toptotal,
@@ -128,14 +148,15 @@ let AdminService = class AdminService {
         }
         throw new common_1.HttpException({ message: '服务器出错' }, 400);
     }
-    async upfilename(file) {
-        common_1.Logger.log(file.mimetype);
+    async upfilename(file, user) {
         if ((file.mimetype != 'text/plain') && (file.mimetype != 'text/csv')) {
             throw new common_1.HttpException('请上存txt/csv格式文件', 400);
         }
         let filename = this.utils.randomString(20);
         let filepath = (0, path_1.join)(tempPath, `${filename}.txt`);
         await fsp.writeFile(filepath, file.buffer);
+        common_1.Logger.log(user.username + ' 上传 '
+            + "类型:" + file.mimetype + " 文件名:" + filename + " 文件大小:" + file.size + " 字节");
         return { filename: filename + '.txt' };
     }
     async setting(body) {

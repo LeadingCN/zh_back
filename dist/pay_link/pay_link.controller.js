@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const pay_link_service_1 = require("./pay_link.service");
 const create_pay_link_dto_1 = require("./dto/create-pay_link.dto");
 const passport_1 = require("@nestjs/passport");
+const roles_decorator_1 = require("../shared/decorator/roles.decorator");
+const role_enum_1 = require("../shared/enums/role.enum");
 let PayLinkController = class PayLinkController {
     constructor(payLinkService) {
         this.payLinkService = payLinkService;
@@ -24,13 +26,17 @@ let PayLinkController = class PayLinkController {
     async createbyfile(body, req) {
         return await this.payLinkService.createbyfile(body, req.user);
     }
-    async findAll(query) {
-        return await this.payLinkService.findAll(query);
+    async findAll(query, req) {
+        return await this.payLinkService.findAll(query, req.user);
+    }
+    async deletelink(body, req) {
+        return await this.payLinkService.deletelink(body, req.user);
     }
 };
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Post)('createbyfile'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -40,11 +46,23 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     (0, common_1.Get)('list'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_pay_link_dto_1.QueryList]),
+    __metadata("design:paramtypes", [create_pay_link_dto_1.QueryList, Object]),
     __metadata("design:returntype", Promise)
 ], PayLinkController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('deletelink'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.Proxy),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], PayLinkController.prototype, "deletelink", null);
 PayLinkController = __decorate([
     (0, common_1.Controller)('pay-link'),
     __metadata("design:paramtypes", [pay_link_service_1.PayLinkService])

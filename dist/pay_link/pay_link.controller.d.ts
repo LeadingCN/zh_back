@@ -6,8 +6,9 @@ export declare class PayLinkController {
     createbyfile(body: any, req: any): Promise<{
         errls: any[];
     }>;
-    findAll(query: QueryList): Promise<{
+    findAll(query: QueryList, req: any): Promise<{
         total: any;
         list: any;
     }>;
+    deletelink(body: any, req: any): Promise<string>;
 }

@@ -12,7 +12,14 @@ const zh_service_1 = require("./zh.service");
 const zh_controller_1 = require("./zh.controller");
 const zhexecute_service_1 = require("./zhexecute.service");
 const sell_EX_1 = require("../sell_order/sell_EX");
+const mysql_middleware_1 = require("../shared/middleware/mysql.middleware");
 let ZhModule = class ZhModule {
+    configure(consumer) {
+        consumer
+            .apply(mysql_middleware_1.MysqlMiddleware)
+            .exclude({ path: 'zh/gettask', method: common_1.RequestMethod.GET }, { path: 'zh/checktask', method: common_1.RequestMethod.GET }, { path: 'zh/upaqcode', method: common_1.RequestMethod.GET }, { path: 'zh/checkzh', method: common_1.RequestMethod.GET }, { path: 'zh/zhcreate', method: common_1.RequestMethod.POST })
+            .forRoutes(zh_controller_1.ZhController);
+    }
 };
 ZhModule = __decorate([
     (0, common_1.Module)({

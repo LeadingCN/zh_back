@@ -6,16 +6,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.XMLMiddleware = void 0;
+exports.LogMiddleware = void 0;
 const common_1 = require("@nestjs/common");
-let XMLMiddleware = class XMLMiddleware {
-    use(req, res, next) {
-        common_1.Logger.log(`${req.url} 的 请求参数 ${req.method == 'GET' ? JSON.stringify(req.query) : JSON.stringify(req.body)}`);
+let LogMiddleware = class LogMiddleware {
+    use(req, resp, next) {
+        common_1.Logger.log(`${req.method} ${req.path}`);
         next();
     }
 };
-XMLMiddleware = __decorate([
+LogMiddleware = __decorate([
     (0, common_1.Injectable)()
-], XMLMiddleware);
-exports.XMLMiddleware = XMLMiddleware;
-//# sourceMappingURL=xml.middleware.js.map
+], LogMiddleware);
+exports.LogMiddleware = LogMiddleware;
+//# sourceMappingURL=log.middleware.js.map

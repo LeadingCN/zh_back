@@ -124,7 +124,7 @@ let TasksService = class TasksService {
         let outtiemls = await this.sql.query(`SELECT * FROM zh WHERE balance_lock = 1 AND unix_timestamp(NOW())-unix_timestamp(lock_time) > 300`);
         if (outtiemls.length > 0) {
             for (let i = 0; i < outtiemls.length; i++) {
-                await this.zh_ex.upquota('one', outtiemls[i]);
+                await this.zh_ex.upquota('one', outtiemls[i], 0);
                 await this.sql.query(`UPDATE zh SET lock_time = now(),balance_lock = 0 WHERE id = ${outtiemls[i].id}`);
                 let r = this.sell_ex.killprocess(outtiemls[i].zh);
                 if (r) {

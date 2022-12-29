@@ -11,12 +11,19 @@ const common_1 = require("@nestjs/common");
 const admin_service_1 = require("./admin.service");
 const admin_controller_1 = require("./admin.controller");
 const user_service_1 = require("./user.service");
+const proxyuser_service_1 = require("./proxyuser.service");
+const mysql_middleware_1 = require("../shared/middleware/mysql.middleware");
 let AdminModule = class AdminModule {
+    configure(consumer) {
+        consumer
+            .apply(mysql_middleware_1.MysqlMiddleware)
+            .forRoutes({ path: 'admin/proxyuser*', method: common_1.RequestMethod.ALL });
+    }
 };
 AdminModule = __decorate([
     (0, common_1.Module)({
         controllers: [admin_controller_1.AdminController],
-        providers: [admin_service_1.AdminService, user_service_1.UserService]
+        providers: [admin_service_1.AdminService, user_service_1.UserService, proxyuser_service_1.ProxyUserService]
     })
 ], AdminModule);
 exports.AdminModule = AdminModule;

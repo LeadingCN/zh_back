@@ -13,8 +13,10 @@ export declare class UtilsService {
     dayjs(): any;
     dayjsDate(date: any): any;
     HTTPGET(url: any): void;
+    uuid(): any;
     guid(t: any, q: any): string;
     zhguid(): string;
+    clearData(data: any): any;
     getsetcache(key: any, time: any): Promise<any>;
     getsetcachemark(key: any, time: any): Promise<any>;
     RSAgetKeyPair(passphrase: any): any;
