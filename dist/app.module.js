@@ -24,6 +24,8 @@ const schedule_1 = require("@nestjs/schedule");
 const api_module_1 = require("./api/api.module");
 const pay_link_module_1 = require("./pay_link/pay_link.module");
 const users_module_1 = require("./users/users.module");
+const channel_module_1 = require("./channel/channel.module");
+const commission_module_1 = require("./commission/commission.module");
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -44,6 +46,8 @@ AppModule = __decorate([
             api_module_1.ApiModule,
             pay_link_module_1.PayLinkModule,
             users_module_1.UsersModule,
+            channel_module_1.ChannelModule,
+            commission_module_1.CommissionModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

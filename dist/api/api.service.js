@@ -285,15 +285,15 @@ let ApiService = class ApiService {
                         agent = agent[0];
                         if (agent.a_pid) {
                             arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.a_pid}'`);
-                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate) VALUES ('${agent.a_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000},${agent.a_pid_rate})`);
+                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate,channel) VALUES ('${agent.a_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000},${agent.a_pid_rate},${r[0].channel})`);
                         }
                         if (agent.b_pid) {
                             arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.b_pid}'`);
-                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate) VALUES ('${agent.b_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000},${agent.b_pid_rate})`);
+                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate,channel) VALUES ('${agent.b_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000},${agent.b_pid_rate},${r[0].channel})`);
                         }
                         if (agent.c_pid) {
                             arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.c_pid}'`);
-                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate) VALUES ('${agent.c_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000},${agent.c_pid_rate})`);
+                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate,channel) VALUES ('${agent.c_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000},${agent.c_pid_rate},${r[0].channel})`);
                         }
                     }
                     await this.sql.transaction(arr);
@@ -366,7 +366,10 @@ let ApiService = class ApiService {
             let q = Number(body.orderAmt) * 100;
             let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
             let userMinQuota = await this.utils.getsetcache('userMinQuota', 120);
-            let channelRate = await this.utils.getsetcache(`channelRate${body.channel}`, 120);
+            let channelRate = await this.sql.query(`SELECT * FROM channel WHERE id = ${body.channel} AND enable = 1`);
+            if (!channelRate[0])
+                throw new Error('通道不存在或者已经关闭');
+            channelRate = channelRate[0].rate;
             let lResult = await this.getUid(q);
             let arr = [
                 ` UPDATE paylink  
