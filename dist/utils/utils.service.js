@@ -19,6 +19,7 @@ const path = require('path');
 const md5 = require('md5');
 const dayjs = require('dayjs');
 const { v4: uuidv4 } = require('uuid');
+const { escape } = require('mysql');
 let UtilsService = class UtilsService {
     constructor(redis, sql) {
         this.redis = redis;
