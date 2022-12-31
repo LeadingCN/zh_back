@@ -55,7 +55,13 @@ let ApiService = class ApiService {
             if (sign.length == 32) {
                 switch (channel) {
                     case '1':
-                        return await this.payqq(body);
+                        let agent = await this.utils.getsetcache('agent', 60);
+                        if (agent == '1') {
+                            return await this.payqqAgent(body);
+                        }
+                        else {
+                            return await this.payqq(body);
+                        }
                     case '2':
                         return await this.payvx(body);
                     default:
@@ -250,7 +256,6 @@ let ApiService = class ApiService {
         let localsign = this.ascesign(body, yan);
         common_1.Logger.log(`${localsign}   ${merId}查询订单  请求签名${body.sign}`);
         if (localsign === body.sign) {
-            common_1.Logger.log("查询开始");
             let r = await this.sql.query(`SELECT * FROM top_order WHERE  tid = '${body.orderId}'`);
             if (!r[0]) {
                 return '查询出错,订单号错误';
@@ -260,6 +265,7 @@ let ApiService = class ApiService {
                     let res = { merId: body.merId, status: 1, orderId: r[0].mer_orderId, sysOrderId: r[0].tid, orderAmt: r[0].quota, nonceStr: this.utils.randomString(16) };
                     let sign = this.ascesign(res, yan);
                     res['sign'] = sign;
+                    common_1.Logger.log("查询结束");
                     return res;
                 }
             }
@@ -272,8 +278,24 @@ let ApiService = class ApiService {
                 if (translist.indexOf(r[0].oid) > -1) {
                     let arr = [
                         `UPDATE top_order SET result = 1,err_info='支付到账' WHERE tid = '${body.orderId}'`,
-                        `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${body.orderId}')b ON a.oid = b.oid  SET result = 1,tid = '${body.orderId}'  `
+                        `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${body.orderId}')b ON a.oid = b.oid  SET result = 1,tid = '${body.orderId}'  `,
                     ];
+                    let agent = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${r[0].uid}'`);
+                    if (agent[0]) {
+                        agent = agent[0];
+                        if (agent.a_pid) {
+                            arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.a_pid}'`);
+                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate) VALUES ('${agent.a_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000},${agent.a_pid_rate})`);
+                        }
+                        if (agent.b_pid) {
+                            arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.b_pid}'`);
+                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate) VALUES ('${agent.b_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000},${agent.b_pid_rate})`);
+                        }
+                        if (agent.c_pid) {
+                            arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.c_pid}'`);
+                            arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate) VALUES ('${agent.c_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000},${agent.c_pid_rate})`);
+                        }
+                    }
                     await this.sql.transaction(arr);
                     ispay = 1;
                     let tNotify = {
@@ -287,8 +309,6 @@ let ApiService = class ApiService {
                         attch: '1'
                     };
                     if (r[0].merchant_id == '6') {
-                        common_1.Logger.log(r[0]);
-                        common_1.Logger.log(tNotify);
                     }
                     this.notifyRequest(r[0].mer_notifyUrl, tNotify, yan);
                 }
@@ -328,6 +348,139 @@ let ApiService = class ApiService {
                 common_1.Logger.error(`${notify.sysOrderId}更新回调状态 : 失败 . 出错`);
             }
             common_1.Logger.error(`${url}回调通知失败 ${JSON.stringify(error)}`);
+        }
+    }
+    async payqqAgent(body) {
+        let { merId } = body;
+        let yan = '';
+        if (merId != '1') {
+            merId = merId.replace ? merId.replace(/ /g, '') : merId;
+            let tyan = await this.sql.query(`SELECT yan FROM user WHERE id = ${merId}`);
+            if (tyan[0])
+                yan = `&key=${tyan[0].yan}`;
+        }
+        let localsign = this.ascesign(body, yan);
+        common_1.Logger.log(`${localsign}   ${merId}拉起qq链接  请求签名${body.sign}`);
+        if (localsign === body.sign) {
+            await this.amountRange(Number(body.orderAmt));
+            let q = Number(body.orderAmt) * 100;
+            let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
+            let userMinQuota = await this.utils.getsetcache('userMinQuota', 120);
+            let channelRate = await this.utils.getsetcache(`channelRate${body.channel}`, 120);
+            let lResult = await this.getUid(q);
+            let arr = [
+                ` UPDATE paylink  
+        SET lock_time = FROM_UNIXTIME(unix_timestamp(lock_time) + 3600)   WHERE 
+        id = ${lResult.linkid} ;`,
+                `SELECT cast((a_pid_rate+b_pid_rate+c_pid_rate)/1000 as decimal(9,4)) AS rate_total INTO @rate_total FROM adminuser WHERE uid =  '${lResult.uid}';`,
+                `UPDATE adminuser SET quota = quota - ${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) WHERE uid = '${lResult.uid}';`,
+                `SELECT *,${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) AS sub_quota FROM paylink WHERE id = ${lResult.linkid} ;`
+            ];
+            common_1.Logger.log(arr.join('\n'));
+            let r = await this.sql.transaction(arr);
+            if (r.result && r.data[0]) {
+                let { zh, pay_link, oid, zid, zhmark, uid, sub_quota } = r.data[0];
+                let { orderId, userId, ip, notifyUrl, orderAmt, channel } = body;
+                let tid = this.utils.guid(this.linktype[channel], orderAmt.indexOf('.') > -1 ? orderAmt.split('.')[0] : orderAmt);
+                await this.sql.query(`INSERT ignore INTO top_order(uid,tid,zh,quota,merchant_id	,pay_link,result,oid,mer_orderId,mer_userId,mer_ip,mer_notifyUrl,zid,zhmark,channel,sub_quota) VALUES 
+        ('${uid}','${tid}','${zh}',${q},${body.merId},'${pay_link}',2,'${oid}','${orderId}','${userId}','${ip}','${notifyUrl}','${zid}','${zhmark}',1,${sub_quota})`);
+                await this.redis.set(tid, pay_link, 180);
+                return { code: 1, payurl: `${host}/pay.html?no=${tid}`, sysorderno: tid, orderno: orderId };
+            }
+            else {
+                throw new common_1.HttpException('无符合链接', 400);
+            }
+        }
+        throw new common_1.HttpException('校验错误', 400);
+    }
+    async getUid(q) {
+        let userMinQuota = await this.utils.getsetcache('userMinQuota', 120);
+        let payQueue = await this.redis.get('payQueue');
+        let nowUid = null;
+        if (!payQueue) {
+            let r = await this.sql.query(`SELECT uid FROM adminuser WHERE quota > ${Number(userMinQuota) * 100} AND pay_open =1 `);
+            if (!r[0]) {
+                common_1.Logger.error(`队列查询  无符合用户`);
+                throw new common_1.HttpException('无符合链接', 400);
+            }
+            payQueue = r;
+            await this.redis.set('payQueue', JSON.stringify(payQueue), 60);
+        }
+        else {
+            payQueue = JSON.parse(payQueue);
+        }
+        common_1.Logger.log(`队列查询  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)}`);
+        let startUid = null;
+        let l = [];
+        let last_uid = await this.redis.get('nowUid');
+        if (last_uid) {
+            common_1.Logger.log(`恢复状态前 :  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)} \n 最后一次用户uid ${last_uid}`);
+            let index = payQueue.findIndex((item) => {
+                return item.uid == last_uid;
+            });
+            if (index > -1) {
+                payQueue = payQueue.slice(index + 1 > payQueue.length ? 0 : index + 1).concat(payQueue.slice(0, index + 1 > payQueue.length ? 0 : index + 1));
+            }
+        }
+        common_1.Logger.log(`恢复状态后 :  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)} \n 最后一次用户uid ${last_uid}`);
+        do {
+            nowUid = payQueue.shift();
+            if (!startUid) {
+                startUid = nowUid.uid;
+            }
+            else {
+                if (nowUid.uid == startUid) {
+                    break;
+                }
+            }
+            payQueue.push(nowUid);
+            l = await this.sql.query(`SELECT id FROM paylink WHERE uid = '${nowUid.uid}'
+        AND channel = 1
+        AND merchant_id = 0
+        AND pay_link is not null
+        AND oid is not null
+        AND quota = ${q}
+        AND result = 0 
+        AND is_delete = 0 
+        AND lock_time <= now() 
+        AND create_status = 1  
+        LIMIT 1`);
+            common_1.Logger.log(`查询语句 : SELECT id FROM paylink WHERE uid = '${nowUid.uid}'
+        AND channel = 1
+        AND merchant_id = 0
+        AND pay_link is not null
+        AND oid is not null
+        AND quota = ${q}
+        AND result = 0 
+        AND is_delete = 0 
+        AND lock_time <= now() 
+        AND create_status = 1  
+        LIMIT 1 \n队列查询  当前用户${nowUid.uid}符合链接ID:${l[0] ? l[0].id : '无'}`);
+        } while (!l[0]);
+        if (!l[0]) {
+            common_1.Logger.error(`队列循环后  无符合用户`);
+            throw new common_1.HttpException('无符合链接', 400);
+        }
+        else {
+            await this.redis.set('nowUid', nowUid.uid, 60 * 60 * 24);
+            return { linkid: l[0].id, uid: nowUid.uid };
+        }
+    }
+    async amountRange(q) {
+        let amount = await this.redis.get('amountRange');
+        if (!amount) {
+            let r = await this.sql.query(`SELECT set_value FROM zhset WHERE set_name = 'amountRange'`);
+            if (r[0]) {
+                amount = r[0].set_value;
+                await this.redis.set('amountRange', amount, 180);
+            }
+        }
+        amount = amount.split(',');
+        let result = amount.some((item) => {
+            return Number(item) == q;
+        });
+        if (!result) {
+            throw new common_1.HttpException('金额不在范围内', 400);
         }
     }
     async getpayurl(body) {

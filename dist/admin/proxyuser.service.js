@@ -33,7 +33,7 @@ let ProxyUserService = class ProxyUserService {
       ${uidsql}
       ${isdelsql}
      ${adminsql}`);
-        let r = await this.sql.query(`SELECT * FROM adminuser WHERE (username LIKE '%${keyword ? keyword : ''}%'  OR nickName LIKE '%${keyword ? keyword : ''}%')
+        let r = await this.sql.query(`SELECT ${user.roles == 'admin' ? '*' : ' username,nickName,uid,quota '} FROM adminuser WHERE (username LIKE '%${keyword ? keyword : ''}%'  OR nickName LIKE '%${keyword ? keyword : ''}%')
       ${uidsql}
       ${isdelsql}
      ${adminsql}
@@ -45,15 +45,28 @@ let ProxyUserService = class ProxyUserService {
         };
     }
     async createuser(body, user) {
-        common_1.Logger.log(` ${user.username} 创建 代理用户 ${body.username}`);
+        common_1.Logger.log(` ${user.username}: ${user.uid} 创建 代理用户 ${body.username}`);
         this.LVERRORLOG(user);
         let r = await this.sql.query(`SELECT username FROM adminuser WHERE username = '${body.username}'`);
         if (r[0]) {
             throw new common_1.HttpException('用户名已存在', 400);
         }
-        common_1.Logger.log(this.utils.uuid().length);
-        await this.sql.query(`INSERT INTO adminuser (note,status,loginTime,username,password,nickName,lv,roles,pid,uid,uprate) 
-    VALUES ('note',1,'${this.utils.dayjs().format("YYYY-MM-DD HH:mm:ss")}','${body.username}','${this.utils.md5(body.password)}','${body.nickName}',${user.lv + 1},'proxyuser','${user.uid}','${this.utils.uuid()}',${body.rate})`);
+        let userInfo = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${user.uid}'`);
+        if (userInfo[0]) {
+            userInfo = userInfo[0];
+        }
+        else {
+            throw new common_1.HttpException('用户不存在', 400);
+        }
+        await this.sql.query(`INSERT INTO adminuser (note,status,loginTime,username,password,nickName,lv,roles,pid,uid,
+      a_pid,a_pid_rate
+      ${userInfo.lv >= 1 ? ',b_pid,b_pid_rate' : ''}
+      ${userInfo.lv >= 2 ? ',c_pid,c_pid_rate' : ''}) 
+    VALUES ('note',1,'${this.utils.dayjs().format("YYYY-MM-DD HH:mm:ss")}','${body.username}','${this.utils.md5(body.password)}','${body.nickName}',${user.lv + 1},'proxyuser','${user.uid}','${this.utils.uuid()}',
+    '1',${userInfo.a_pid_rate}
+    ${userInfo.lv == 1 ? `,'${userInfo.uid}',${userInfo.rate}` : userInfo.lv == 0 ? '' : `,'${userInfo.b_pid}',${userInfo.b_pid_rate}`}
+    ${userInfo.lv == 2 ? `,'${userInfo.uid}',${userInfo.rate}` : ''}
+    )`);
         return 'ok';
     }
     async updateuser(body, user) {
@@ -77,9 +90,9 @@ let ProxyUserService = class ProxyUserService {
                 }
                 let arr = [
                     `UPDATE adminuser SET quota = quota + ${body.quota} WHERE uid = '${body.uid}'`,
-                    `update adminuser set quota = quota - ${body.quota} where uid = '${user.uid}'`,
-                    `INSERT INTO quotalog (actionuid,topuid,quota,action) VALUES ('${user.uid}','${body.uid}',${body.quota},'topup')`,
                 ];
+                user.roles != 'admin' ? arr.push(`UPDATE adminuser SET quota = quota - ${body.quota} WHERE uid = '${user.uid}'`) : '';
+                arr.push(`INSERT INTO quotalog (actionuid,topuid,quota,action) VALUES ('${user.uid}','${body.uid}',${body.quota},'topup')`);
                 await this.sql.transaction(arr);
                 break;
             case 'resetpwd':
@@ -88,9 +101,35 @@ let ProxyUserService = class ProxyUserService {
             case 'uprate':
                 let rateArr = [
                     `UPDATE adminuser SET rate = ${body.rate} WHERE uid = '${user.uid}'${adminsql}`,
-                    `UPDATE adminuser SET uprate = ${body.rate} WHERE pid = '${user.uid}'${adminsql}`,
                 ];
+                if (user.uid == '1') {
+                    rateArr.push(`UPDATE adminuser SET a_pid_rate = ${body.rate} WHERE a_pid = '${user.uid}'`);
+                }
+                else if (user.lv == 1) {
+                    rateArr.push(`UPDATE adminuser SET b_pid_rate = ${body.rate} WHERE b_pid = '${user.uid}'`);
+                }
+                else if (user.lv == 2) {
+                    rateArr.push(`UPDATE adminuser SET c_pid_rate = ${body.rate} WHERE c_pid = '${user.uid}'`);
+                }
                 await this.sql.transaction(rateArr);
+                break;
+            case "commission":
+                let { commission } = body;
+                commission = Math.floor(commission * 100);
+                let r = await this.sql.query(`SELECT commission FROM adminuser WHERE uid = '${user.uid}'`);
+                if (r[0] && r[0].commission < commission) {
+                    common_1.Logger.error(`提余失败 ${user.username}|${user.uid}|${commission}`);
+                    throw new common_1.HttpException('佣金不足', 400);
+                }
+                let commissionarr = [
+                    `UPDATE adminuser SET quota = quota + ${commission},commission = commission - ${commission} WHERE uid = '${user.uid}' AND commission >= ${commission} ${adminsql}`,
+                    `INSERT INTO quotalog (actionuid,topuid,quota,action) VALUES ('${user.uid}','${user.uid}',${commission},'commission')`
+                ];
+                await this.sql.transaction(commissionarr);
+                break;
+            case 'payopen':
+                let { value } = body;
+                await this.sql.query(`UPDATE adminuser SET payopen = ${value} WHERE uid = '${user.uid}'${adminsql}`);
                 break;
         }
         return 'ok';
@@ -120,7 +159,7 @@ let ProxyUserService = class ProxyUserService {
         }
     }
     async isSelf(body, user) {
-        if (body.action == 'uprate')
+        if (body.action == 'uprate' || body.action == 'commission' || body.action == "payopen")
             return;
         let r = await this.sql.query(`SELECT pid FROM adminuser WHERE uid = '${body.uid}'`);
         if (r[0].pid != user.uid && user.roles != 'admin') {

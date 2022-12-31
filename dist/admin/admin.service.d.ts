@@ -14,8 +14,8 @@ export declare class AdminService {
         username: any;
         quota: any;
         rate: any;
-        uprate: any;
         lv: any;
+        commission: any;
     }>;
     list(): Promise<any>;
     statictotal(user: any): Promise<any>;

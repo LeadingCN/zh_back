@@ -43,7 +43,7 @@ let AdminService = class AdminService {
             throw new common_1.HttpException('账号密码错误', 400);
         }
         else {
-            let roles = await this.sql.query(`SELECT roles,quota,rate,lv,uprate FROM adminuser WHERE uid = '${user.uid}' and is_delete = 0`);
+            let roles = await this.sql.query(`SELECT roles,quota,rate,lv,commission FROM adminuser WHERE uid = '${user.uid}' and is_delete = 0`);
             if (!roles[0]) {
                 common_1.Logger.error(`${user.username}请求登录后台但后台无该用户数据,id:${user.uid}`);
                 throw new common_1.HttpException('账号密码错误', 400);
@@ -65,8 +65,8 @@ let AdminService = class AdminService {
                 username: user.username,
                 quota: roles[0].quota,
                 rate: roles[0].rate,
-                uprate: roles[0].uprate,
                 lv: roles[0].lv,
+                commission: roles[0].commission,
             };
         }
     }
@@ -168,7 +168,6 @@ let AdminService = class AdminService {
                     e.edit = false;
                 });
                 return r;
-                break;
             case 'save':
                 common_1.Logger.log(JSON.stringify(data));
                 let { set_value, set_name, id, mark } = data;

@@ -6,7 +6,7 @@ export declare class Admin {
 }
 export declare class UserToken {
     username: string;
-    uid: number;
+    uid: string;
     roles: string;
     lv: number;
 }
@@ -39,4 +39,6 @@ export declare class ProxyUserUpdate {
     quota: number;
     uid: string;
     rate: number;
+    commission: number;
+    value: number;
 }

@@ -168,11 +168,13 @@ let TasksService = class TasksService {
         if (r.result && r.data[0]) {
             let data = r.data;
             common_1.Logger.log(`有超时订单,数量:${data.length}`);
-            let resetls = [];
             for (let i = 0; i < data.length; i++) {
-                resetls.push(`'${data[i].oid}'`);
+                let resetOrderAndAdminuserQuota = [
+                    `UPDATE paylink SET  merchant_id = 0 ,result = 0,tid=NULL WHERE is_delete = 0 AND channel = 1 AND  oid  = '${data[i].oid}'`,
+                    `UPDATE adminuser SET quota = quota + ${data[i].sub_quota} WHERE uid = '${data[i].uid}'`
+                ];
+                await this.sql.transaction(resetOrderAndAdminuserQuota);
             }
-            await this.sql.query(`UPDATE paylink SET  merchant_id = 0 ,result = 0,tid=NULL WHERE is_delete = 0 AND channel = 1 AND  oid in (${resetls.join(',')})`);
         }
         let pay_link_unlock_time = await this.utils.getsetcache('pay_link_unlock_time', 60);
         let arr3 = [

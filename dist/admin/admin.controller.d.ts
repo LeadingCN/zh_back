@@ -15,8 +15,8 @@ export declare class AdminController {
         username: any;
         quota: any;
         rate: any;
-        uprate: any;
         lv: any;
+        commission: any;
     }>;
     list(): Promise<any>;
     statictotal(req: any): Promise<any>;

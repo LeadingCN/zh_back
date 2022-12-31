@@ -58,6 +58,17 @@ export declare class ApiService {
         nonceStr: string;
     }>;
     notifyRequest(url: any, notify: Notify, yan: string): Promise<void>;
+    payqqAgent(body: Pay): Promise<{
+        code: number;
+        payurl: string;
+        sysorderno: string;
+        orderno: string;
+    }>;
+    getUid(q: any): Promise<{
+        linkid: any;
+        uid: any;
+    }>;
+    amountRange(q: any): Promise<void>;
     getpayurl(body: GetPayUrl): Promise<{
         code: number;
         msg: string;
