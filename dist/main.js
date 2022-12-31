@@ -33,6 +33,9 @@ async function bootstrap() {
         module.hot.accept();
         module.hot.dispose(() => app.close());
     }
+    console.log = function log() {
+        return;
+    };
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
