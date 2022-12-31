@@ -129,7 +129,7 @@ let ProxyUserService = class ProxyUserService {
                 break;
             case 'payopen':
                 let { value } = body;
-                await this.sql.query(`UPDATE adminuser SET payopen = ${value} WHERE uid = '${user.uid}'${adminsql}`);
+                await this.sql.query(`UPDATE adminuser SET pay_open = ${value} WHERE uid = '${user.uid}'${adminsql}`);
                 break;
         }
         return 'ok';
