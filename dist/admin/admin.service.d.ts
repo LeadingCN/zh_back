@@ -16,6 +16,7 @@ export declare class AdminService {
         rate: any;
         lv: any;
         commission: any;
+        payopen: any;
     }>;
     list(): Promise<any>;
     statictotal(user: any): Promise<any>;
