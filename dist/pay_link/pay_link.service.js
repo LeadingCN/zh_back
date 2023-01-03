@@ -86,6 +86,9 @@ let PayLinkService = class PayLinkService {
         if (list) {
             list = this.utils.clearData(list);
             list = list.split('%2C');
+            if (list.length == 1) {
+                list = list[0].split(',');
+            }
             if (user.roles != 'admin') {
                 await this.sql.query(`UPDATE ${this.mtable} SET is_delete = 1 WHERE oid IN ('${list.join("','")}') ${this.isAdmin(user)}`);
             }
