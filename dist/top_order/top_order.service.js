@@ -146,7 +146,32 @@ let TopOrderService = class TopOrderService {
                 attch: '1'
             };
             await this.api.notifyRequest(r[0].mer_notifyUrl, tNotify, yan);
-            await this.sql.query(`UPDATE paylink SET result = -1, create_status = -1 WHERE oid = '${r[0].oid}' ${this.isAdmin(user)}`);
+            let arr = [
+                `UPDATE paylink SET result = -1, create_status = -1 WHERE oid = '${r[0].oid}' ${this.isAdmin(user)}`,
+            ];
+            if (r[0].err_info == "支付超时") {
+                arr.push(`UPDATE adminuser SET quota = quota - ${r[0].quota} WHERE uid = '${r[0].uid}'`);
+            }
+            else {
+                arr.push(`UPDATE top_order SET result = 1,err_info='强制回调' WHERE tid = '${r[0].tid}' AND uid = '${r[0].uid}'`);
+            }
+            let agent = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${r[0].uid}'`);
+            if (agent[0]) {
+                agent = agent[0];
+                if (agent.a_pid) {
+                    arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.a_pid}'`);
+                    arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate,channel) VALUES ('${agent.a_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.a_pid_rate / 1000 * 1000) / 1000},${agent.a_pid_rate},${r[0].channel})`);
+                }
+                if (agent.b_pid) {
+                    arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.b_pid}'`);
+                    arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate,channel) VALUES ('${agent.b_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.b_pid_rate / 1000 * 1000) / 1000},${agent.b_pid_rate},${r[0].channel})`);
+                }
+                if (agent.c_pid) {
+                    arr.push(`UPDATE adminuser SET commission = commission + ${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000} WHERE uid = '${agent.c_pid}'`);
+                    arr.push(`INSERT INTO commissionlog (uid,tid,quota,rate,channel) VALUES ('${agent.c_pid}','${r[0].tid}',${r[0].quota * Math.floor(agent.c_pid_rate / 1000 * 1000) / 1000},${agent.c_pid_rate},${r[0].channel})`);
+                }
+            }
+            await this.sql.transaction(arr);
             return 'ok';
         }
         else {
