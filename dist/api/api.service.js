@@ -271,6 +271,11 @@ let ApiService = class ApiService {
             }
             let zh = await this.sql.query(`SELECT * FROM zh WHERE zh = '${r[0].zh}'`);
             if (zh[0]) {
+                common_1.Logger.log(zh[0].cookie);
+                if (zh[0].cookie.indexOf('midas_txcz_openid') == -1 || zh[0].cookie.indexOf('midas_txcz_openkey') == -1) {
+                    common_1.Logger.error("无法找到匹配的openid或openkey");
+                    return;
+                }
                 let openidArray = zh[0].cookie.match(/midas_txcz_openid=([a-z,A-Z,0-9]+)/);
                 let openid = openidArray.length > 1 ? openidArray[1] : common_1.Logger.error("无法找到匹配的openid");
                 let openkeyArray = zh[0].cookie.match(/midas_txcz_openkey=([a-z,A-Z,0-9]+)/);
