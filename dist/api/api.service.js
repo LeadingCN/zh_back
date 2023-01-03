@@ -273,7 +273,7 @@ let ApiService = class ApiService {
             if (zh[0]) {
                 common_1.Logger.log(zh[0].cookie);
                 if (zh[0].cookie.indexOf('midas_txcz_openid') == -1 || zh[0].cookie.indexOf('midas_txcz_openkey') == -1) {
-                    common_1.Logger.error("无法找到匹配的openid或openkey");
+                    common_1.Logger.error(`${zh[0].zh}无法找到匹配的openid或openkey.归属uid:${zh[0].uid}`);
                     return;
                 }
                 let openidArray = zh[0].cookie.match(/midas_txcz_openid=([a-z,A-Z,0-9]+)/);
