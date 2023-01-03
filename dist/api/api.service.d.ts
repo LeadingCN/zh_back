@@ -4,6 +4,7 @@ import { RedisService } from 'src/utils/redis.service';
 import { UtilsService } from 'src/utils/utils.service';
 import { ZhExecuteService } from 'src/zh/zhexecute.service';
 import { GetPayUrl, Notify, Pay, PayQuery } from './dto/api.dto';
+import { UserToken } from 'src/admin/dto/admin.dto';
 export declare class ApiService {
     private readonly utils;
     private readonly sql;
@@ -56,6 +57,13 @@ export declare class ApiService {
         sysOrderId: any;
         orderAmt: any;
         nonceStr: string;
+    } | {
+        merId: string | number;
+        status: number;
+        orderId: any;
+        sysOrderId: any;
+        orderAmt: number;
+        nonceStr: string;
     }>;
     notifyRequest(url: any, notify: Notify, yan: string): Promise<void>;
     payqqAgent(body: Pay): Promise<{
@@ -76,5 +84,5 @@ export declare class ApiService {
     }>;
     ascesign(obj: any, yan: string): string;
     testreset(): Promise<string>;
-    getonecreate(b: any, user: any): Promise<any>;
+    getonecreate(b: any, user: UserToken): Promise<any>;
 }

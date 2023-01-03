@@ -18,6 +18,13 @@ export declare class ApiController {
         sysOrderId: any;
         orderAmt: any;
         nonceStr: string;
+    } | {
+        merId: string | number;
+        status: number;
+        orderId: any;
+        sysOrderId: any;
+        orderAmt: number;
+        nonceStr: string;
     }>;
     testreset(): Promise<string>;
     update(query: UserAction, req: any): Promise<"ok" | {

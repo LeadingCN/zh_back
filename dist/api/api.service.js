@@ -247,7 +247,7 @@ let ApiService = class ApiService {
     async payquery(body) {
         let { merId } = body;
         let yan = '';
-        if (merId != '1') {
+        if (merId && merId != '1') {
             merId = merId.replace ? merId.replace(/ /g, '') : merId;
             let tyan = await this.sql.query(`SELECT yan FROM user WHERE id = ${merId}`);
             if (tyan[0])
@@ -312,7 +312,7 @@ let ApiService = class ApiService {
                     }
                     this.notifyRequest(r[0].mer_notifyUrl, tNotify, yan);
                 }
-                let res = { merId: body.merId, status: ispay, orderId: r[0].mer_orderId, sysOrderId: r[0].tid, orderAmt: r[0].quota / 100, nonceStr: this.utils.randomString(16) };
+                let res = { merId: body.merId ? body.merId : 0, status: ispay, orderId: r[0].mer_orderId, sysOrderId: r[0].tid, orderAmt: r[0].quota / 100, nonceStr: this.utils.randomString(16) };
                 let sign = this.ascesign(res, yan);
                 res['sign'] = sign;
                 return res;
@@ -412,12 +412,10 @@ let ApiService = class ApiService {
         else {
             payQueue = JSON.parse(payQueue);
         }
-        common_1.Logger.log(`队列查询  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)}`);
         let startUid = null;
         let l = [];
         let last_uid = await this.redis.get('nowUid');
         if (last_uid) {
-            common_1.Logger.log(`恢复状态前 :  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)} \n 最后一次用户uid ${last_uid}`);
             let index = payQueue.findIndex((item) => {
                 return item.uid == last_uid;
             });
@@ -425,7 +423,6 @@ let ApiService = class ApiService {
                 payQueue = payQueue.slice(index + 1 > payQueue.length ? 0 : index + 1).concat(payQueue.slice(0, index + 1 > payQueue.length ? 0 : index + 1));
             }
         }
-        common_1.Logger.log(`恢复状态后 :  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)} \n 最后一次用户uid ${last_uid}`);
         do {
             nowUid = payQueue.shift();
             if (!startUid) {
@@ -448,17 +445,6 @@ let ApiService = class ApiService {
         AND lock_time <= now() 
         AND create_status = 1  
         LIMIT 1`);
-            common_1.Logger.log(`查询语句 : SELECT id FROM paylink WHERE uid = '${nowUid.uid}'
-        AND channel = 1
-        AND merchant_id = 0
-        AND pay_link is not null
-        AND oid is not null
-        AND quota = ${q}
-        AND result = 0 
-        AND is_delete = 0 
-        AND lock_time <= now() 
-        AND create_status = 1  
-        LIMIT 1 \n队列查询  当前用户${nowUid.uid}符合链接ID:${l[0] ? l[0].id : '无'}`);
         } while (!l[0]);
         if (!l[0]) {
             common_1.Logger.error(`队列循环后  无符合用户`);
@@ -528,6 +514,7 @@ let ApiService = class ApiService {
         switch (action) {
             case 'getzh':
                 let sqlstr = `select * FROM zh WHERE is_delete = 0 AND enable = 1 
+    AND uid = '${user.uid}'
     AND quota >=5000 AND quota-quota_temp >= 5000 
     AND balance_lock = 0 AND zh not in (SELECT zh FROM paylink WHERE channel = 1 AND unix_timestamp(NOW())-unix_timestamp(create_time) < 86400) 
     ORDER BY RAND() LIMIT 1`;
@@ -538,7 +525,7 @@ let ApiService = class ApiService {
             case 'savelink':
                 console.log(b);
                 let msg = b;
-                let zh = await this.sql.query(`select * from zh where zh = '${msg.zh}'`);
+                let zh = await this.sql.query(`select * from zh where zh = '${msg.zh}' AND uid = '${user.uid}'`);
                 if (zh[0]) {
                     msg.zid = zh[0].zid;
                 }
@@ -549,8 +536,7 @@ let ApiService = class ApiService {
                 let buff = Buffer.from(msg.pay_link, 'base64');
                 const str = buff.toString('utf-8');
                 let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
-                common_1.Logger.log("保存链接" + `INSERT INTO paylink(zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
-                await this.sql.query(`INSERT INTO paylink(zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
+                await this.sql.query(`INSERT INTO paylink(uid,zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${user.uid}','${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
                 return 'ok';
             default:
                 break;
