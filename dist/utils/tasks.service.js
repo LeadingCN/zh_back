@@ -171,7 +171,8 @@ let TasksService = class TasksService {
             for (let i = 0; i < data.length; i++) {
                 let resetOrderAndAdminuserQuota = [
                     `UPDATE paylink SET  merchant_id = 0 ,result = 0,tid=NULL WHERE is_delete = 0 AND channel = 1 AND  oid  = '${data[i].oid}'`,
-                    `UPDATE adminuser SET quota = quota + ${data[i].sub_quota} WHERE uid = '${data[i].uid}'`
+                    `UPDATE adminuser SET quota = quota + ${data[i].sub_quota} WHERE uid = '${data[i].uid}'`,
+                    `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('repay',${data[i].uid},0,${data[i].sub_quota});`
                 ];
                 await this.sql.transaction(resetOrderAndAdminuserQuota);
             }

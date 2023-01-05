@@ -135,6 +135,17 @@ let TopOrderService = class TopOrderService {
                 yan = `&key=${tyan[0].yan}`;
         }
         if (query.action == '2') {
+            let arr = [
+                `UPDATE paylink SET result = -1, create_status = -1 WHERE oid = '${r[0].oid}' ${this.isAdmin(user)}`,
+                `UPDATE top_order SET result = 1,err_info='强制回调' WHERE tid = '${r[0].tid}' AND uid = '${r[0].uid}'`
+            ];
+            if (r[0].err_info == "支付超时") {
+                arr.push(`UPDATE adminuser SET quota = quota - ${r[0].quota} WHERE uid = '${r[0].uid}'`);
+                arr.push(`INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('conpay',${r[0].uid},0,${r[0].quota});`);
+            }
+            else {
+                throw new common_1.HttpException('请等待订单超时再操作', 400);
+            }
             let tNotify = {
                 merId: r[0].merchant_id,
                 orderId: r[0].mer_orderId,
@@ -146,16 +157,6 @@ let TopOrderService = class TopOrderService {
                 attch: '1'
             };
             await this.api.notifyRequest(r[0].mer_notifyUrl, tNotify, yan);
-            let arr = [
-                `UPDATE paylink SET result = -1, create_status = -1 WHERE oid = '${r[0].oid}' ${this.isAdmin(user)}`,
-            ];
-            if (r[0].err_info == "支付超时") {
-                arr.push(`UPDATE adminuser SET quota = quota - ${r[0].quota} WHERE uid = '${r[0].uid}'`);
-                arr.push(`UPDATE top_order SET result = 1,err_info='强制回调' WHERE tid = '${r[0].tid}' AND uid = '${r[0].uid}'`);
-            }
-            else {
-                arr.push(`UPDATE top_order SET result = 1,err_info='强制回调' WHERE tid = '${r[0].tid}' AND uid = '${r[0].uid}'`);
-            }
             let agent = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${r[0].uid}'`);
             if (agent[0]) {
                 agent = agent[0];
