@@ -62,6 +62,7 @@ let ApiService = class ApiService {
                         else {
                             return await this.payqq(body);
                         }
+                        break;
                     case '2':
                         return await this.payvx(body);
                     default:
@@ -254,8 +255,8 @@ let ApiService = class ApiService {
                 yan = `&key=${tyan[0].yan}`;
         }
         let localsign = this.ascesign(body, yan);
-        common_1.Logger.log(`${localsign}   ${merId}查询订单  请求签名${body.sign}`);
         if (localsign === body.sign) {
+            common_1.Logger.log("查询开始超时订单");
             let r = await this.sql.query(`SELECT * FROM top_order WHERE  tid = '${body.orderId}'`);
             if (!r[0]) {
                 return '查询出错,订单号错误';
@@ -271,7 +272,6 @@ let ApiService = class ApiService {
             }
             let zh = await this.sql.query(`SELECT * FROM zh WHERE zh = '${r[0].zh}'`);
             if (zh[0]) {
-                common_1.Logger.log(zh[0].cookie);
                 if (zh[0].cookie.indexOf('midas_txcz_openid') == -1 || zh[0].cookie.indexOf('midas_txcz_openkey') == -1) {
                     common_1.Logger.error(`${zh[0].zh}无法找到匹配的openid或openkey.归属uid:${zh[0].uid}`);
                     return;
@@ -380,13 +380,12 @@ let ApiService = class ApiService {
             let lResult = await this.getUid(q);
             let arr = [
                 ` UPDATE paylink  
-        SET lock_time = FROM_UNIXTIME(unix_timestamp(lock_time) + 3600)   WHERE 
+        SET result = 2, merchant_id =  ${body.merId}, lock_time = FROM_UNIXTIME(unix_timestamp(now()) +${pay_link_lock_time})    WHERE 
         id = ${lResult.linkid} ;`,
                 `SELECT cast((a_pid_rate+b_pid_rate+c_pid_rate)/1000 as decimal(9,4)) AS rate_total INTO @rate_total FROM adminuser WHERE uid =  '${lResult.uid}';`,
                 `UPDATE adminuser SET quota = quota - ${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) WHERE uid = '${lResult.uid}';`,
                 `SELECT *,${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) AS sub_quota FROM paylink WHERE id = ${lResult.linkid} ;`
             ];
-            common_1.Logger.log(arr.join('\n'));
             let r = await this.sql.transaction(arr);
             if (r.result && r.data[0]) {
                 let { zh, pay_link, oid, zid, zhmark, uid, sub_quota } = r.data[0];

@@ -151,6 +151,7 @@ let TopOrderService = class TopOrderService {
             ];
             if (r[0].err_info == "支付超时") {
                 arr.push(`UPDATE adminuser SET quota = quota - ${r[0].quota} WHERE uid = '${r[0].uid}'`);
+                arr.push(`UPDATE top_order SET result = 1,err_info='强制回调' WHERE tid = '${r[0].tid}' AND uid = '${r[0].uid}'`);
             }
             else {
                 arr.push(`UPDATE top_order SET result = 1,err_info='强制回调' WHERE tid = '${r[0].tid}' AND uid = '${r[0].uid}'`);
