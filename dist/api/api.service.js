@@ -384,7 +384,7 @@ let ApiService = class ApiService {
         id = ${lResult.linkid} ;`,
                 `SELECT cast((a_pid_rate+b_pid_rate+c_pid_rate)/1000 as decimal(9,4)) AS rate_total INTO @rate_total FROM adminuser WHERE uid =  '${lResult.uid}';`,
                 `UPDATE adminuser SET quota = quota - ${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) WHERE uid = '${lResult.uid}';`,
-                `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('pay',${lResult.uid},0,${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total));`,
+                `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('pay','${lResult.uid}','0',${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total));`,
                 `SELECT *,${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) AS sub_quota FROM paylink WHERE id = ${lResult.linkid} ;`
             ];
             let r = await this.sql.transaction(arr);
