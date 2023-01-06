@@ -142,6 +142,7 @@ let TopOrderService = class TopOrderService {
             if (r[0].err_info == "支付超时") {
                 arr.push(`UPDATE adminuser SET quota = quota - ${r[0].quota} WHERE uid = '${r[0].uid}'`);
                 arr.push(`INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('conpay','${r[0].uid}','0',${r[0].quota});`);
+                arr.push(`UPDATE zh SET quota_temp = quota_temp + ${r[0].quota} WHERE zid = '${r[0].zid}'`);
             }
             else {
                 throw new common_1.HttpException('请等待订单超时再操作', 400);

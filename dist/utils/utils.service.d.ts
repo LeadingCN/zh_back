@@ -16,6 +16,8 @@ export declare class UtilsService {
     uuid(): any;
     guid(t: any, q: any): string;
     zhguid(): string;
+    testlog: string;
+    istestlog(c: any): void;
     clearData(data: any): any;
     getsetcache(key: any, time: any): Promise<any>;
     getsetcachemark(key: any, time: any): Promise<any>;

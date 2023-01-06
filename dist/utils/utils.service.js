@@ -27,6 +27,7 @@ let UtilsService = class UtilsService {
         this.nowprocess = 0;
         this.maxprocess = 0;
         this.iscreate = false;
+        this.testlog = '1';
     }
     randomString(e) {
         e = e || 32;
@@ -69,6 +70,11 @@ let UtilsService = class UtilsService {
             var v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         }).toLocaleUpperCase();
+    }
+    istestlog(c) {
+        if (this.testlog != '1')
+            return;
+        common_1.Logger.log(c);
     }
     clearData(data) {
         data = data.toString().replace(/\s+/g, '');

@@ -75,6 +75,7 @@ export declare class ApiService {
     getUid(q: any): Promise<{
         linkid: any;
         uid: any;
+        zid: any;
     }>;
     amountRange(q: any): Promise<void>;
     getpayurl(body: GetPayUrl): Promise<{

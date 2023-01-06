@@ -286,6 +286,7 @@ let ApiService = class ApiService {
                     let arr = [
                         `UPDATE top_order SET result = 1,err_info='支付到账' WHERE tid = '${body.orderId}'`,
                         `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${body.orderId}')b ON a.oid = b.oid  SET result = 1,tid = '${body.orderId}'  `,
+                        `UPDATE zh SET quota_total = quota_total + ${r[0].quota} WHERE zid = '${r[0].zid}'`,
                     ];
                     let agent = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${r[0].uid}'`);
                     if (agent[0]) {
@@ -382,6 +383,7 @@ let ApiService = class ApiService {
                 ` UPDATE paylink  
         SET result = 2, merchant_id =  ${body.merId}, lock_time = FROM_UNIXTIME(unix_timestamp(now()) +${pay_link_lock_time})    WHERE 
         id = ${lResult.linkid} ;`,
+                `UPDATE zh SET quota_temp = quota_temp + ${q} WHERE zid = '${lResult.zid}';`,
                 `SELECT cast((a_pid_rate+b_pid_rate+c_pid_rate)/1000 as decimal(9,4)) AS rate_total INTO @rate_total FROM adminuser WHERE uid =  '${lResult.uid}';`,
                 `UPDATE adminuser SET quota = quota - ${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) WHERE uid = '${lResult.uid}';`,
                 `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('pay','${lResult.uid}','0',${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total));`,
@@ -441,16 +443,16 @@ let ApiService = class ApiService {
                 }
             }
             payQueue.push(nowUid);
-            l = await this.sql.query(`SELECT id FROM paylink WHERE uid = '${nowUid.uid}'
-        AND channel = 1
-        AND merchant_id = 0
-        AND pay_link is not null
-        AND oid is not null
-        AND quota = ${q}
-        AND result = 0 
-        AND is_delete = 0 
-        AND lock_time <= now() 
-        AND create_status = 1  
+            l = await this.sql.query(`SELECT a.id FROM paylink AS a JOIN  (select * FROM zh WHERE uid = '${nowUid.uid}' AND quota - quota_temp >= ${q} AND enable = 1)b ON b.zid = a.zid  WHERE a.uid = '${nowUid.uid}'
+        AND a.channel = 1
+        AND a.merchant_id = 0
+        AND a.pay_link is not null
+        AND a.oid is not null
+        AND a.quota = ${q}
+        AND a.result = 0 
+        AND a.is_delete = 0 
+        AND a.lock_time <= now() 
+        AND a.create_status = 1  
         LIMIT 1`);
         } while (!l[0]);
         if (!l[0]) {
@@ -459,7 +461,7 @@ let ApiService = class ApiService {
         }
         else {
             await this.redis.set('nowUid', nowUid.uid, 60 * 60 * 24);
-            return { linkid: l[0].id, uid: nowUid.uid };
+            return { linkid: l[0].id, uid: nowUid.uid, zid: l[0].zid };
         }
     }
     async amountRange(q) {

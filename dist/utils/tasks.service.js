@@ -30,7 +30,6 @@ let TasksService = class TasksService {
         this.redis = redis;
         this.api = api;
         this.utils.maxprocess = os.cpus().length;
-        common_1.Logger.log('Task =>' + `have ${this.utils.maxprocess} cpu,run ${this.utils.nowprocess} cpu`);
     }
     async vx_top_order_handler() {
         let task_open = await this.utils.getsetcache('task_open', 60);
@@ -47,7 +46,7 @@ let TasksService = class TasksService {
             ];
             let r = await this.sql.transaction(toparr);
             if (r.result && r.data[0]) {
-                common_1.Logger.log('有尚未处理的微信订单');
+                this.utils.istestlog('有尚未处理的微信订单');
                 r = r.data[0];
                 let vx_bock_time = await this.utils.getsetcache('vx_bock_time', 120);
                 let arr = [
@@ -59,7 +58,7 @@ let TasksService = class TasksService {
                 ];
                 let zhData = await this.sql.transaction(arr);
                 if (zhData.data[0]) {
-                    common_1.Logger.log('有可用于vx链接支付的账号');
+                    this.utils.istestlog('有可用于vx链接支付的账号');
                     this.top_ex.create(zhData.data[0], r.quota, 2, r.tid);
                 }
             }
@@ -93,19 +92,19 @@ let TasksService = class TasksService {
                 let zh = await this.sql.transaction(checkZH);
                 if (zh.result && zh.data[0]) {
                     let zhData = zh.data[0];
-                    common_1.Logger.log('Task =>' + "match zh:" + zhData.zh + ',update order ');
+                    this.utils.istestlog('Task =>' + "match zh:" + zhData.zh + ',update order ');
                     let n = await this.zh_ex.upbyzh(zhData.zh);
-                    common_1.Logger.log(n);
+                    this.utils.istestlog(n);
                     if (Number(n) > s_order.quota * 100) {
                         await this.sql.query(`UPDATE sell_order SET pay_zh = '${zhData.zh}',before_quota=${zhData.balance + Number(s_order.quota) * 100},result = 2,err_info=NULL WHERE id = ${r.data[0].id}`);
-                        common_1.Logger.log('Task =>' + "action");
+                        this.utils.istestlog('Task =>' + "action");
                         this.sell_ex.create(s_order, zhData);
                     }
                     else {
                     }
                 }
                 else {
-                    common_1.Logger.log('Task =>' + `no zh,sell_id => ${r.data[0].id} quota=> ${r.data[0].quota} ,order reset`);
+                    this.utils.istestlog('Task =>' + `no zh,sell_id => ${r.data[0].id} quota=> ${r.data[0].quota} ,order reset`);
                     setTimeout(() => {
                         this.sql.query(`UPDATE sell_order set result = -1 ,up_time = '0000-00-00 00:00:00',err_info='库存不足' WHERE id = ${r.data[0].id}`);
                     }, 10 * 1000);
@@ -128,7 +127,7 @@ let TasksService = class TasksService {
                 await this.sql.query(`UPDATE zh SET lock_time = now(),balance_lock = 0 WHERE id = ${outtiemls[i].id}`);
                 let r = this.sell_ex.killprocess(outtiemls[i].zh);
                 if (r) {
-                    common_1.Logger.log('Task =>' + `outtime process:${outtiemls[i].zh}  close success`);
+                    this.utils.istestlog('Task =>' + `outtime process:${outtiemls[i].zh}  close success`);
                 }
             }
         }
@@ -139,6 +138,7 @@ let TasksService = class TasksService {
             return;
         let t1 = new Date().getTime();
         let r2 = await this.sql.query(`SELECT * FROM top_order WHERE result = 2 AND is_delete = 0 AND create_status = 1`);
+        this.utils.istestlog("上游订单查询数量:" + r2.length);
         if (r2[0]) {
             for (let i = 0; i < r2.length; i++) {
                 let yan = "";
@@ -167,12 +167,13 @@ let TasksService = class TasksService {
         let r = await this.sql.transaction(arr);
         if (r.result && r.data[0]) {
             let data = r.data;
-            common_1.Logger.log(`有超时订单,数量:${data.length}`);
+            this.utils.istestlog(`有超时订单,数量:${data.length}`);
             for (let i = 0; i < data.length; i++) {
                 let resetOrderAndAdminuserQuota = [
                     `UPDATE paylink SET  merchant_id = 0 ,result = 0,tid=NULL WHERE is_delete = 0 AND channel = 1 AND  oid  = '${data[i].oid}'`,
                     `UPDATE adminuser SET quota = quota + ${data[i].sub_quota} WHERE uid = '${data[i].uid}'`,
-                    `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('repay','${data[i].uid}','0',${data[i].sub_quota});`
+                    `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('repay','${data[i].uid}','0',${data[i].sub_quota});`,
+                    `UPDATE zh SET quota_temp = quota_temp - ${data[i].quota} WHERE zid = '${data[i].zid}'`
                 ];
                 await this.sql.transaction(resetOrderAndAdminuserQuota);
             }
@@ -186,6 +187,10 @@ let TasksService = class TasksService {
     }
     async resetZhquota_temp() {
         await this.sql.query(`UPDATE zh SET quota_temp = 0 `);
+    }
+    async istestlog() {
+        let r = await this.utils.getsetcache('istestlog', 30);
+        this.utils.testlog = r;
     }
     async handler_toporder() {
         let task_open = await this.utils.getsetcache('task_open', 60);
@@ -254,6 +259,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], TasksService.prototype, "resetZhquota_temp", null);
+__decorate([
+    (0, schedule_1.Cron)('*/30 * * * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TasksService.prototype, "istestlog", null);
 __decorate([
     (0, schedule_1.Cron)('*/10 * * * * *'),
     __metadata("design:type", Function),

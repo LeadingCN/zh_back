@@ -19,5 +19,6 @@ export declare class TasksService {
     handler_outtime(): Promise<void>;
     top_order_outtime_reset(): Promise<void>;
     resetZhquota_temp(): Promise<void>;
+    istestlog(): Promise<void>;
     handler_toporder(): Promise<void>;
 }
