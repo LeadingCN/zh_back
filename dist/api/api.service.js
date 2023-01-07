@@ -421,10 +421,12 @@ let ApiService = class ApiService {
         else {
             payQueue = JSON.parse(payQueue);
         }
+        this.utils.istestlog(`队列查询  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)}`);
         let startUid = null;
         let l = [];
         let last_uid = await this.redis.get('nowUid');
         if (last_uid) {
+            this.utils.istestlog(`恢复状态前 :  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)} \n 最后一次用户uid ${last_uid}`);
             let index = payQueue.findIndex((item) => {
                 return item.uid == last_uid;
             });
@@ -432,6 +434,7 @@ let ApiService = class ApiService {
                 payQueue = payQueue.slice(index + 1 > payQueue.length ? 0 : index + 1).concat(payQueue.slice(0, index + 1 > payQueue.length ? 0 : index + 1));
             }
         }
+        this.utils.istestlog(`恢复状态后 :  当前队列长度${payQueue.length},当前队列${JSON.stringify(payQueue)} \n 最后一次用户uid ${last_uid}`);
         do {
             nowUid = payQueue.shift();
             if (!startUid) {
@@ -443,6 +446,17 @@ let ApiService = class ApiService {
                 }
             }
             payQueue.push(nowUid);
+            this.utils.istestlog(`查询语句 :\n SELECT a.id FROM paylink AS a JOIN  (select * FROM zh WHERE uid = '${nowUid.uid}' AND quota - quota_temp >= ${q} AND enable = 1)b ON b.zid = a.zid  WHERE a.uid = '${nowUid.uid}'
+      AND a.channel = 1
+      AND a.merchant_id = 0
+      AND a.pay_link is not null
+      AND a.oid is not null
+      AND a.quota = ${q}
+      AND a.result = 0 
+      AND a.is_delete = 0 
+      AND a.lock_time <= now() 
+      AND a.create_status = 1  
+      LIMIT 1 \n队列查询  当前用户${nowUid.uid}符合链接ID:${l[0] ? l[0].id : '无'}`);
             l = await this.sql.query(`SELECT a.id FROM paylink AS a JOIN  (select * FROM zh WHERE uid = '${nowUid.uid}' AND quota - quota_temp >= ${q} AND enable = 1)b ON b.zid = a.zid  WHERE a.uid = '${nowUid.uid}'
         AND a.channel = 1
         AND a.merchant_id = 0
