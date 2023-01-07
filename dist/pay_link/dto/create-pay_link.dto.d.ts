@@ -5,4 +5,5 @@ export declare class QueryList {
     pageNum: number;
     pageSize: number;
     queryType: string;
+    zid: string;
 }

@@ -8,6 +8,7 @@ export declare class QueryList {
     zhmark: string;
     channel: string;
     dateArray: any;
+    uid: string;
 }
 export declare class TopOrder {
     quota: number;

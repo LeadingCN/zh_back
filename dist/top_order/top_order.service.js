@@ -47,11 +47,14 @@ let TopOrderService = class TopOrderService {
         return { code };
     }
     async findAll(params, user) {
-        let { zid, keyword, pageNum, pageSize, queryType, zhmark, dateArray, channel, merchant_id } = params;
-        common_1.Logger.log(dateArray);
+        let { uid, zid, keyword, pageNum, pageSize, queryType, zhmark, dateArray, channel, merchant_id } = params;
+        let uidsql = '';
+        if (user.roles == 'admin' && uid) {
+            uidsql = ` AND uid = '${uid}'`;
+        }
         let zidsql = '';
         if (zid) {
-            zidsql = ` AND zid LIKE '%${zid}%'`;
+            zidsql = ` AND (zid LIKE '%${zid}%' or zh LIKE '%${zid}%')`;
         }
         let queryTypesql = '';
         if (queryType) {
@@ -66,7 +69,7 @@ let TopOrderService = class TopOrderService {
             channelsql = ` AND channel = ${channel}`;
         }
         let merchantidsql = '';
-        if (merchant_id) {
+        if (merchant_id && typeof merchant_id == 'number') {
             merchantidsql = ` AND merchant_id = ${merchant_id}`;
         }
         let createsql = '';
@@ -74,18 +77,21 @@ let TopOrderService = class TopOrderService {
             dateArray = dateArray.split(',');
             createsql = ` AND unix_timestamp(create_time) > unix_timestamp('${this.utils.dayjsDate(dateArray[0]).format('YYYY-MM-DD HH:mm:ss')}') AND unix_timestamp(create_time) <= unix_timestamp('${this.utils.dayjsDate(dateArray[1]).format('YYYY-MM-DD HH:mm:ss')}')`;
         }
-        let total = await this.sql.query(`SELECT count(1) AS count,SUM(quota) AS quotatotal FROM ${this.order_talbe} WHERE zh LIKE '%${keyword ? keyword : ''}%' AND is_delete = 0 ${zidsql} ${queryTypesql} ${zhmarksql} ${createsql} ${channelsql} ${merchantidsql} 
+        let total = await this.sql.query(`SELECT count(1) AS count,SUM(quota) AS quotatotal FROM ${this.order_talbe} WHERE is_delete = 0 
+      ${zidsql} ${queryTypesql} ${zhmarksql} ${createsql} ${channelsql} ${merchantidsql} ${uidsql}
       ${this.isAdmin(user)};
       `);
-        let r = await this.sql.query(`SELECT * FROM ${this.order_talbe} WHERE (tid LIKE '%${keyword ? keyword : ''}%' or oid LIKE '%${keyword ? keyword : ''}%' or mer_orderId LIKE '%${keyword ? keyword : ''}%')
-      AND is_delete = 0
+        let r = await this.sql.query(`SELECT * FROM ${this.order_talbe} WHERE 
+      is_delete = 0 
+      AND (tid LIKE '%${keyword ? keyword : ''}%' or oid LIKE '%${keyword ? keyword : ''}%' or mer_orderId LIKE '%${keyword ? keyword : ''}%')
       ${zidsql}
       ${queryTypesql}
       ${zhmarksql}
       ${createsql}
       ${channelsql}
       ${merchantidsql}
-       ${this.isAdmin(user)}
+      ${uidsql}
+      ${this.isAdmin(user)}
        ORDER BY create_time DESC
       LIMIT ${(pageNum - 1) * pageSize},${pageSize}`);
         return {

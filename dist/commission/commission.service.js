@@ -45,6 +45,7 @@ let CommissionService = class CommissionService {
       ${createsql}
       ${!channel || channel == '0' || channel == '' ? '' : ` AND channel = ${channel}`}
       ${user.roles == 'admin' ? '' : ` AND uid = '${user.uid}' `}
+      ORDER BY create_time DESC
       LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
         return {
             total: total[0].count,

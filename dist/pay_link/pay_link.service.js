@@ -60,16 +60,19 @@ let PayLinkService = class PayLinkService {
         return { errls };
     }
     async findAll(params, user) {
-        let { keyword, pageNum, pageSize, queryType } = params;
+        let { keyword, pageNum, pageSize, queryType, zid } = params;
         let queryTypesql = '';
         if (queryType) {
             queryTypesql = ` AND result = ${queryType}`;
         }
-        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.mtable} WHERE zh LIKE '%${keyword ? keyword : ''}%'${queryTypesql}  
+        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.mtable} WHERE (tid LIKE '%${keyword ? keyword : ''}%' or oid LIKE '%${keyword ? keyword : ''}%') 
+      AND (zh LIKE '%${zid ? zid : ''}%' or zid LIKE '%${zid ? zid : ''}%')
+      ${queryTypesql}  
       AND is_delete = 0 
       ${this.isAdmin(user)}
       `);
-        let r = await this.sql.query(`SELECT * FROM ${this.mtable} WHERE (tid LIKE '%${keyword ? keyword : ''}%' or oid LIKE '%${keyword ? keyword : ''}%')
+        let r = await this.sql.query(`SELECT * FROM ${this.mtable} WHERE (tid LIKE '%${keyword ? keyword : ''}%' or oid LIKE '%${keyword ? keyword : ''}%') 
+      AND (zh LIKE '%${zid ? zid : ''}%' or zid LIKE '%${zid ? zid : ''}%')
       ${queryTypesql}
       AND is_delete = 0
       ${this.isAdmin(user)}
