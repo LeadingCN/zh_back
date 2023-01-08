@@ -8,9 +8,15 @@ export declare class ChannelService {
     constructor(sql: MysqlService, utils: UtilsService);
     create(createChannelDto: CreateChannelDto): void;
     private zh_table;
+    private zh_sub_table;
     findAll(params: any, user: UserToken): Promise<{
         total: any;
         list: any;
     }>;
     upchannel(body: any): Promise<string>;
+    sublist(params: any, user: UserToken): Promise<{
+        total: any;
+        list: any;
+    }>;
+    upsubchannel(body: any): Promise<string>;
 }

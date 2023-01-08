@@ -28,6 +28,12 @@ let ChannelController = class ChannelController {
     async findAll(query, req) {
         return await this.channelService.findAll(query, req.user);
     }
+    async sublist(query, req) {
+        return await this.channelService.sublist(query, req.user);
+    }
+    async upsubchannel(body) {
+        return await this.channelService.upsubchannel(body);
+    }
 };
 __decorate([
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
@@ -47,6 +53,24 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], ChannelController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Get)('sublist'),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ChannelController.prototype, "sublist", null);
+__decorate([
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('upsubchannel'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ChannelController.prototype, "upsubchannel", null);
 ChannelController = __decorate([
     (0, common_1.Controller)('channel'),
     __metadata("design:paramtypes", [channel_service_1.ChannelService])

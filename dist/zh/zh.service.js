@@ -62,7 +62,6 @@ let ZhService = class ZhService {
         };
     }
     async up(body, user) {
-        console.log(body);
         if (body.list) {
             body.list = body.list.split(',');
         }
@@ -91,6 +90,9 @@ let ZhService = class ZhService {
         }
         else if (body.action == 'upquota') {
             await this.ex.upquota('upquota', body, user);
+        }
+        else if (body.action == 'upmark') {
+            await this.sql.query(`UPDATE ${this.zh_table} SET mark = '${body.mark}' WHERE zid = '${body.zid}'`);
         }
         return 'ok';
     }

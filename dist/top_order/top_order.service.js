@@ -47,10 +47,14 @@ let TopOrderService = class TopOrderService {
         return { code };
     }
     async findAll(params, user) {
-        let { uid, zid, keyword, pageNum, pageSize, queryType, zhmark, dateArray, channel, merchant_id } = params;
+        let { uid, zid, keyword, pageNum, pageSize, queryType, zhmark, dateArray, channel, merchant_id, channelsub } = params;
         let uidsql = '';
         if (user.roles == 'admin' && uid) {
             uidsql = ` AND uid = '${uid}'`;
+        }
+        let channelsubsql = '';
+        if (channelsub) {
+            channelsubsql = ` AND zhmark = '${channelsub}'`;
         }
         let zidsql = '';
         if (zid) {
@@ -78,7 +82,7 @@ let TopOrderService = class TopOrderService {
             createsql = ` AND unix_timestamp(create_time) > unix_timestamp('${this.utils.dayjsDate(dateArray[0]).format('YYYY-MM-DD HH:mm:ss')}') AND unix_timestamp(create_time) <= unix_timestamp('${this.utils.dayjsDate(dateArray[1]).format('YYYY-MM-DD HH:mm:ss')}')`;
         }
         let total = await this.sql.query(`SELECT count(1) AS count,SUM(quota) AS quotatotal FROM ${this.order_talbe} WHERE is_delete = 0 
-      ${zidsql} ${queryTypesql} ${zhmarksql} ${createsql} ${channelsql} ${merchantidsql} ${uidsql}
+      ${zidsql} ${queryTypesql} ${zhmarksql} ${createsql} ${channelsql} ${merchantidsql} ${uidsql} ${channelsubsql}
       ${this.isAdmin(user)};
       `);
         let r = await this.sql.query(`SELECT * FROM ${this.order_talbe} WHERE 
@@ -89,6 +93,7 @@ let TopOrderService = class TopOrderService {
       ${zhmarksql}
       ${createsql}
       ${channelsql}
+      ${channelsubsql}
       ${merchantidsql}
       ${uidsql}
       ${this.isAdmin(user)}

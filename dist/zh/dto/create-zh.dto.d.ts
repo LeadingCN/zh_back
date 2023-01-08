@@ -14,6 +14,7 @@ export declare class ZhDto {
     is_delete: number;
     action: string;
     list: any;
+    mark: string;
 }
 export declare class ZhDtoList {
     id: number;

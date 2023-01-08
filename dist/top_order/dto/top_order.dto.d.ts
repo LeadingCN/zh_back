@@ -9,6 +9,7 @@ export declare class QueryList {
     channel: string;
     dateArray: any;
     uid: string;
+    channelsub: string;
 }
 export declare class TopOrder {
     quota: number;

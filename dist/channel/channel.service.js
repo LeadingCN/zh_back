@@ -18,6 +18,7 @@ let ChannelService = class ChannelService {
         this.sql = sql;
         this.utils = utils;
         this.zh_table = 'channel';
+        this.zh_sub_table = 'channel_sub';
     }
     create(createChannelDto) {
     }
@@ -35,6 +36,8 @@ let ChannelService = class ChannelService {
       LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
         r.forEach(e => {
             e.rate = (Math.floor((e.rate + (Number(`${user.roles == 'admin' ? 0 : userInfo.a_pid_rate}`) + userInfo.b_pid_rate + userInfo.c_pid_rate) * 10) / 10000 * 10000) / 100).toFixed(2);
+            e.value = e.id;
+            e.label = e.name;
         });
         return {
             total: total[0].count,
@@ -54,6 +57,42 @@ let ChannelService = class ChannelService {
                 break;
         }
         return 'ok';
+    }
+    async sublist(params, user) {
+        let userInfo = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${user.uid}'`);
+        if (!userInfo[0]) {
+            throw new common_1.HttpException("用户不存在", 400);
+        }
+        else {
+            userInfo = userInfo[0];
+        }
+        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_sub_table} WHERE name LIKE '%${params.keyword ? params.keyword : ''}%'
+      `);
+        let r = await this.sql.query(`SELECT * FROM ${this.zh_sub_table} WHERE name LIKE '%${params.keyword ? params.keyword : ''}%' 
+        LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
+        r.forEach(e => {
+            e.label = e.name;
+            e.value = e.id;
+        });
+        return {
+            total: total[0].count,
+            list: r,
+        };
+    }
+    async upsubchannel(body) {
+        let { action } = body;
+        switch (action) {
+            case "add":
+                await this.sql.query(`INSERT INTO ${this.zh_sub_table} (name,cid) VALUES ('${body.name}',${body.cid})`);
+                break;
+            case "remove":
+                await this.sql.query(`DELETE FROM ${this.zh_sub_table} WHERE id = ${body.id}`);
+                break;
+            case "edit":
+                await this.sql.query(`UPDATE ${this.zh_sub_table} SET name = '${body.name}' WHERE id = ${body.id}`);
+                break;
+        }
+        return "ok";
     }
 };
 ChannelService = __decorate([

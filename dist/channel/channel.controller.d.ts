@@ -7,4 +7,9 @@ export declare class ChannelController {
         total: any;
         list: any;
     }>;
+    sublist(query: any, req: any): Promise<{
+        total: any;
+        list: any;
+    }>;
+    upsubchannel(body: any): Promise<string>;
 }
