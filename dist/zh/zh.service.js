@@ -50,10 +50,13 @@ let ZhService = class ZhService {
         return error.length > 0 ? error : 'ok';
     }
     async findAll(params, user) {
-        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_table} WHERE zh LIKE '%${params.keyword ? params.keyword : ''}%' AND is_delete = 0 
+        let { channelsub } = params;
+        let channelsubsql = channelsub ? ` AND mark = '${channelsub == '未设置' ? '' : channelsub}'` : '';
+        let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_table} WHERE (zh LIKE '%${params.keyword ? params.keyword : ''}%' or zid LIKE '%${params.keyword ? params.keyword : ''}%') AND is_delete = 0 
+      ${channelsubsql}
       ${this.isAdmin(user)}
       `);
-        let r = await this.sql.query(`SELECT * FROM ${this.zh_table} WHERE zh LIKE '%${params.keyword ? params.keyword : ''}%' AND is_delete = 0  
+        let r = await this.sql.query(`SELECT * FROM ${this.zh_table} WHERE (zh LIKE '%${params.keyword ? params.keyword : ''}%' or zid LIKE '%${params.keyword ? params.keyword : ''}%') AND is_delete = 0  ${channelsubsql}
        ${this.isAdmin(user)}
       LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
         return {
@@ -78,6 +81,9 @@ let ZhService = class ZhService {
         }
         else if (body.action == 'quota') {
             await this.sql.query(`UPDATE ${this.zh_table} SET quota = ${body.quota} WHERE  ${whosql}`);
+        }
+        else if (body.action == 'mark') {
+            await this.sql.query(`UPDATE ${this.zh_table} SET mark = '${body.mark}' WHERE  ${whosql}`);
         }
         else if (body.action == 'enable') {
             await this.sql.query(`UPDATE ${this.zh_table} SET enable = ${body.enable} WHERE zid = '${body.zid}'`);

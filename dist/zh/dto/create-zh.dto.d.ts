@@ -30,6 +30,7 @@ export declare class QueryList {
     keyword: string;
     pageNum: number;
     pageSize: number;
+    channelsub: string;
 }
 export declare class ZH {
     id: number;

@@ -6,4 +6,5 @@ export declare class QueryList {
     pageSize: number;
     queryType: string;
     zid: string;
+    zhmark: string;
 }
