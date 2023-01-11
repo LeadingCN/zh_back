@@ -10,7 +10,13 @@ exports.ScriptModule = void 0;
 const common_1 = require("@nestjs/common");
 const script_service_1 = require("./script.service");
 const script_controller_1 = require("./script.controller");
+const mysql_middleware_1 = require("../shared/middleware/mysql.middleware");
 let ScriptModule = class ScriptModule {
+    configure(consumer) {
+        consumer
+            .apply(mysql_middleware_1.MysqlMiddleware)
+            .forRoutes({ path: 'script/*', method: common_1.RequestMethod.ALL });
+    }
 };
 ScriptModule = __decorate([
     (0, common_1.Module)({

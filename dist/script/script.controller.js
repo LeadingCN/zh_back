@@ -52,7 +52,7 @@ let ScriptController = class ScriptController {
         return {};
     }
     async winversion(query) {
-        return 'ok';
+        return await this.scriptService.version(query);
     }
 };
 __decorate([

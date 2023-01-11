@@ -14,5 +14,10 @@ export declare class ScriptController {
     }>;
     myupdate(query: any): Promise<{}>;
     config(query: any): Promise<{}>;
-    winversion(query: any): Promise<string>;
+    winversion(query: any): Promise<{
+        code: number;
+        version: any;
+        name: string;
+        path: string;
+    }>;
 }
