@@ -51,6 +51,9 @@ let ScriptController = class ScriptController {
     async config(query) {
         return {};
     }
+    async winversion(query) {
+        return 'ok';
+    }
 };
 __decorate([
     (0, common_1.Get)('/update'),
@@ -73,6 +76,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ScriptController.prototype, "config", null);
+__decorate([
+    (0, common_1.Get)("winversion"),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ScriptController.prototype, "winversion", null);
 ScriptController = __decorate([
     (0, common_1.Controller)('script'),
     __metadata("design:paramtypes", [script_service_1.ScriptService,

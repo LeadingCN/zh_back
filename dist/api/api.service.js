@@ -530,8 +530,6 @@ let ApiService = class ApiService {
         return 'ok';
     }
     async getonecreate(b, user) {
-        if (!user)
-            throw new common_1.HttpException('请先登录', 401);
         let { action } = b;
         let result = null;
         switch (action) {
@@ -559,7 +557,7 @@ let ApiService = class ApiService {
                 let buff = Buffer.from(msg.pay_link, 'base64');
                 const str = buff.toString('utf-8');
                 let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
-                await this.sql.query(`INSERT INTO paylink(uid,zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time) VALUES ('${user.uid}','${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}))`);
+                await this.sql.query(`INSERT INTO paylink(uid,zh,quota,pay_link,result,up_time,create_status,oid,zid,lock_time,zhmark) VALUES ('${user.uid}','${msg.zh}',${msg.quota},'${str}',0,now(),1,'${msg.oid}','${msg.zid}',FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}),'${msg.zhmark}')`);
                 return 'ok';
             default:
                 break;

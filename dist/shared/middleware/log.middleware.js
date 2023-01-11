@@ -10,7 +10,7 @@ exports.LogMiddleware = void 0;
 const common_1 = require("@nestjs/common");
 let LogMiddleware = class LogMiddleware {
     use(req, resp, next) {
-        common_1.Logger.log(`${req.method} ${req.path}`);
+        common_1.Logger.log(`${req.body} ${req.path}`);
         next();
     }
 };

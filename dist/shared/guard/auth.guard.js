@@ -19,7 +19,7 @@ let JwtAuthGuard = class JwtAuthGuard {
         this.reflector = reflector;
         this.auth = auth;
         this.urlList = ['/auth/login', '/', '/user', '/example/getlist', '/script/update', '/script/myupdate', '/script/config',
-            "/top-order/create", "/sell-order/create", "/zh/gettask", "/zh/checktask", '/zh/upaqcode', '/sell-order/orderresult', '/api/pay', '/api/pay/query', '/auth/user/login', '/api/user/update', '/api/getpayurl', '/api/getonecreate', '/zh/checkzh'];
+            "/top-order/create", "/sell-order/create", "/zh/gettask", "/zh/checktask", '/zh/upaqcode', '/sell-order/orderresult', '/api/pay', '/api/pay/query', '/auth/user/login', '/api/user/update', '/api/getpayurl'];
     }
     canActivate(context) {
         const { url, query } = context.switchToHttp().getRequest();
@@ -27,15 +27,6 @@ let JwtAuthGuard = class JwtAuthGuard {
         if (this.hasUrl(this.urlList, url)) {
             if (url.indexOf('/api/user/update') > -1) {
                 if (query && query.token) {
-                    request.headers['authorization'] = `Bearer ${query.token}`;
-                }
-            }
-            if (url.indexOf('/api/getonecreate') > -1) {
-                console.log("query", query);
-                if (query && query.token) {
-                    let user = this.auth.jwtDecode(query.token);
-                    console.log(user);
-                    request.user = user;
                     request.headers['authorization'] = `Bearer ${query.token}`;
                 }
             }

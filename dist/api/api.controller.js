@@ -73,8 +73,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ApiController.prototype, "update", null);
 __decorate([
-    (0, common_1.Get)('getonecreate'),
-    __param(0, (0, common_1.Query)()),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    (0, common_1.Post)('getonecreate'),
+    __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
