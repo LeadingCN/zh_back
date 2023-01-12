@@ -33,7 +33,7 @@ let ProxyUserService = class ProxyUserService {
       ${uidsql}
       ${isdelsql}
      ${adminsql}`);
-        let r = await this.sql.query(`SELECT ${user.roles == 'admin' ? '*' : ' username,nickName,uid,quota '} FROM adminuser WHERE (username LIKE '%${keyword ? keyword : ''}%'  OR nickName LIKE '%${keyword ? keyword : ''}%')
+        let r = await this.sql.query(`SELECT ${user.roles == 'admin' ? '*' : ' username,nickName,uid,quota,up_open '} FROM adminuser WHERE (username LIKE '%${keyword ? keyword : ''}%'  OR nickName LIKE '%${keyword ? keyword : ''}%')
       ${uidsql}
       ${isdelsql}
      ${adminsql}
@@ -130,6 +130,16 @@ let ProxyUserService = class ProxyUserService {
             case 'payopen':
                 let { value } = body;
                 await this.sql.query(`UPDATE adminuser SET pay_open = ${value} WHERE uid = '${user.uid}'${adminsql}`);
+                break;
+            case 'upopen':
+                let { upopen, uid } = body;
+                if (user.roles != 'admin') {
+                    let upuser = await this.sql.query(`SELECT * FROM adminuser WHERE uid = '${uid}' AND pid = '${user.uid}'`);
+                    if (!upuser[0]) {
+                        throw new common_1.HttpException('无权操作', 400);
+                    }
+                }
+                await this.sql.query(`UPDATE adminuser SET up_open = ${upopen} WHERE uid = '${uid}'  ${adminsql}`);
                 break;
         }
         return 'ok';

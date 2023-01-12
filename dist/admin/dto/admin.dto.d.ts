@@ -41,4 +41,5 @@ export declare class ProxyUserUpdate {
     rate: number;
     commission: number;
     value: number;
+    upopen: number;
 }

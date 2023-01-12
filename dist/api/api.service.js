@@ -379,6 +379,8 @@ let ApiService = class ApiService {
                 throw new Error('通道不存在或者已经关闭');
             channelRate = channelRate[0].rate;
             let lResult = await this.getUid(q);
+            let { orderId, userId, ip, notifyUrl, orderAmt, channel } = body;
+            let tid = this.utils.guid(this.linktype[channel], orderAmt.indexOf('.') > -1 ? orderAmt.split('.')[0] : orderAmt);
             let arr = [
                 ` UPDATE paylink  
         SET result = 2, merchant_id =  ${body.merId}, lock_time = FROM_UNIXTIME(unix_timestamp(now()) +${pay_link_lock_time})    WHERE 
@@ -386,14 +388,12 @@ let ApiService = class ApiService {
                 `UPDATE zh SET quota_temp = quota_temp + ${q} WHERE zid = '${lResult.zid}';`,
                 `SELECT cast((a_pid_rate+b_pid_rate+c_pid_rate)/1000 as decimal(9,4)) AS rate_total INTO @rate_total FROM adminuser WHERE uid =  '${lResult.uid}';`,
                 `UPDATE adminuser SET quota = quota - ${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) WHERE uid = '${lResult.uid}';`,
-                `INSERT INTO quotalog(action,actionuid,topuid,quota) VALUES('pay','${lResult.uid}','0',${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total));`,
+                `INSERT INTO quotalog(action,actionuid,topuid,tid,quota) VALUES('pay','${lResult.uid}','0','${tid}',${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total));`,
                 `SELECT *,${q}*(${(Math.floor(channelRate / 10000 * 10000) / 10000)}+@rate_total) AS sub_quota FROM paylink WHERE id = ${lResult.linkid} ;`
             ];
             let r = await this.sql.transaction(arr);
             if (r.result && r.data[0]) {
                 let { zh, pay_link, oid, zid, zhmark, uid, sub_quota } = r.data[0];
-                let { orderId, userId, ip, notifyUrl, orderAmt, channel } = body;
-                let tid = this.utils.guid(this.linktype[channel], orderAmt.indexOf('.') > -1 ? orderAmt.split('.')[0] : orderAmt);
                 await this.sql.query(`INSERT ignore INTO top_order(uid,tid,zh,quota,merchant_id	,pay_link,result,oid,mer_orderId,mer_userId,mer_ip,mer_notifyUrl,zid,zhmark,channel,sub_quota) VALUES 
         ('${uid}','${tid}','${zh}',${q},${body.merId},'${pay_link}',2,'${oid}','${orderId}','${userId}','${ip}','${notifyUrl}','${zid}','${zhmark}',1,${sub_quota})`);
                 await this.redis.set(tid, pay_link, 180);
@@ -410,7 +410,7 @@ let ApiService = class ApiService {
         let payQueue = await this.redis.get('payQueue');
         let nowUid = null;
         if (!payQueue) {
-            let r = await this.sql.query(`SELECT uid FROM adminuser WHERE quota > ${Number(userMinQuota) * 100} AND pay_open =1 `);
+            let r = await this.sql.query(`SELECT uid FROM adminuser WHERE quota > ${Number(userMinQuota) * 100} AND pay_open =1 AND up_open = 1`);
             if (!r[0]) {
                 common_1.Logger.error(`队列查询  无符合用户`);
                 throw new common_1.HttpException('无符合链接', 400);
