@@ -77,7 +77,7 @@ let ZhService = class ZhService {
             whosql = `zid = '${body.zid}'`;
         }
         if (body.action == 'del') {
-            await this.sql.query(`UPDATE ${this.zh_table} SET is_delete = 1 WHERE  ${whosql}`);
+            await this.sql.query(`DELETE FROM ${this.zh_table} WHERE  ${whosql}`);
         }
         else if (body.action == 'quota') {
             await this.sql.query(`UPDATE ${this.zh_table} SET quota = ${body.quota} WHERE  ${whosql}`);
