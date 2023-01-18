@@ -196,11 +196,11 @@ let TasksService = class TasksService {
         let task_open = await this.utils.getsetcache('task_open', 60);
         if (task_open != '1')
             return;
+        let link_outtime = await this.utils.getsetcache('link_outtime', 60);
+        await this.sql.query(`UPDATE paylink SET is_delete = 1 WHERE  result = 0 AND is_delete = 0 AND unix_timestamp(NOW())-unix_timestamp(create_time) > ${link_outtime};`);
         let open = await this.utils.getsetcache('open', 60);
         if (Number(open) === 1 && this.utils.iscreate == false) {
             let r = await this.sql.query(`SELECT * FROM zhset WHERE mark LIKE '%面额%'`);
-            let link_outtime = await this.utils.getsetcache('link_outtime', 60);
-            await this.sql.query(`UPDATE paylink SET is_delete = 1 WHERE  result = 0 AND is_delete = 0 AND unix_timestamp(NOW())-unix_timestamp(create_time) > ${link_outtime};`);
             let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
             for (let i = 0; i < r.length; i++) {
                 let ak = await this.sql.query(`SELECT COUNT(*) AS count FROM paylink WHERE quota = ${Number(r[i].set_name) * 100} AND is_delete = 0 AND result = 0 AND zh is not null AND pay_link is not null AND channel = 1 AND    lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1`);
