@@ -12,14 +12,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZhExecuteService = void 0;
 const common_1 = require("@nestjs/common");
 const mysql_service_1 = require("../utils/mysql.service");
+const utils_service_1 = require("../utils/utils.service");
 const TEMPPATH = require('../../config.json').tempPath;
 const REQ = require('request-promise-native');
 const h = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
 };
 let ZhExecuteService = class ZhExecuteService {
-    constructor(sql) {
+    constructor(sql, utils) {
         this.sql = sql;
+        this.utils = utils;
         this.zh_table = "zh";
     }
     async upquota(action, body, user) {
@@ -68,10 +70,13 @@ let ZhExecuteService = class ZhExecuteService {
             session_id: 'openid',
             session_type: 'kp_accesstoken',
         };
+        this.utils.istestlog(`${zh}开始获取交易列表 . oid => ${openid} . okey => ${openkey}`);
         let res = await REQ.post({ url: url, headers: h, form: form });
+        this.utils.istestlog(res);
         try {
             let body = JSON.parse(res);
             if (res && body.msg === 'ok') {
+                this.utils.istestlog(`${zh}交易列表 ${JSON.stringify(body)}`);
                 return res;
             }
         }
@@ -105,7 +110,7 @@ let ZhExecuteService = class ZhExecuteService {
 };
 ZhExecuteService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [mysql_service_1.MysqlService])
+    __metadata("design:paramtypes", [mysql_service_1.MysqlService, utils_service_1.UtilsService])
 ], ZhExecuteService);
 exports.ZhExecuteService = ZhExecuteService;
 //# sourceMappingURL=zhexecute.service.js.map
