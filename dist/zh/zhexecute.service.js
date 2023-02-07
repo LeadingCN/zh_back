@@ -72,12 +72,16 @@ let ZhExecuteService = class ZhExecuteService {
             session_type: 'kp_accesstoken',
         };
         let res = await REQ.post({ url: url, headers: h, form: form });
-        common_1.Logger.log(res);
+        this.utils.istestlog(res);
         try {
             let body = JSON.parse(res);
             if (res && body.msg === 'ok') {
                 this.utils.istestlog(`${zh}交易列表 ${JSON.stringify(body)}`);
                 return res;
+            }
+            if (res && body.msg === '登录校验失败') {
+                common_1.Logger.error(`${zh}   ===   cookie 失效 `);
+                return false;
             }
         }
         catch (error) {
@@ -87,7 +91,7 @@ let ZhExecuteService = class ZhExecuteService {
     }
     async up(openid, openkey, zh) {
         if (openid && openkey && zh) {
-            common_1.Logger.log(`${zh}开始获取余额 . oid => ${openid} . okey => ${openkey}`);
+            this.utils.istestlog(`${zh}开始获取余额 . oid => ${openid} . okey => ${openkey}`);
             let upurl = `https://api.unipay.qq.com/v1/r/1450000186/wechat_query?cmd=4&pf=mds_storeopen_qb-__mds_default_-html5&pfkey=pfkey&from_h5=1&from_https=1&sandbox=&openid=${openid}&openkey=${openkey}&session_id=openid&session_type=kp_accesstoken&WxAppid=wx951bdcac522929b6&qq_appid=101502376&offerId=1450000186`;
             try {
                 let res = await REQ.get({ url: upurl, resolveWithFullResponse: true, headers: h });
