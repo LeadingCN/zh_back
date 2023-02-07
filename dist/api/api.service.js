@@ -288,6 +288,8 @@ let ApiService = class ApiService {
                 let openkeyArray = zh[0].cookie.match(/midas_txcz_openkey=([a-z,A-Z,0-9]+)/);
                 let openkey = openkeyArray.length > 1 ? openkeyArray[1] : common_1.Logger.error("无法找到匹配的openkey");
                 let translist = await this.zhEX.checktranslist(openid, openkey, r[0].zh);
+                this.utils.istestlog('api');
+                this.utils.istestlog(translist);
                 let ispay = 0;
                 if (translist && translist.indexOf(r[0].oid) > -1) {
                     let arr = [
