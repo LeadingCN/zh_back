@@ -28,7 +28,7 @@ else {
         rep = 'dist';
     }
 }
-const tempPath = __dirname.replace(rep, '/public/temp/');
+const tempPath = require('../../config.json').tempPath;
 let AdminService = class AdminService {
     constructor(sql, utils, redis) {
         this.sql = sql;
@@ -157,7 +157,7 @@ let AdminService = class AdminService {
         let filepath = (0, path_1.join)(tempPath, `${filename}.txt`);
         await fsp.writeFile(filepath, file.buffer);
         common_1.Logger.log(user.username + ' 上传 '
-            + "类型:" + file.mimetype + " 文件名:" + filename + " 文件大小:" + file.size + " 字节");
+            + "类型:" + file.mimetype + " 文件名:" + filename + " 文件大小:" + file.size + " 字节", '路径', filepath);
         return { filename: filename + '.txt' };
     }
     async setting(body) {
