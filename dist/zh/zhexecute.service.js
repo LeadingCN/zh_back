@@ -52,6 +52,7 @@ let ZhExecuteService = class ZhExecuteService {
         return 0;
     }
     async checktranslist(openid, openkey, zh) {
+        this.utils.istestlog(`${zh}开始获取交易列表 . oid => ${openid} . okey => ${openkey}`);
         let url = 'https://api.unipay.qq.com/v1/r/1450000186/trade_record_query';
         let form = {
             CmdCode: 'query2',
@@ -70,7 +71,6 @@ let ZhExecuteService = class ZhExecuteService {
             session_id: 'openid',
             session_type: 'kp_accesstoken',
         };
-        this.utils.istestlog(`${zh}开始获取交易列表 . oid => ${openid} . okey => ${openkey}`);
         let res = await REQ.post({ url: url, headers: h, form: form });
         this.utils.istestlog(res);
         try {
