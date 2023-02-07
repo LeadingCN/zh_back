@@ -198,7 +198,7 @@ let TopOrderService = class TopOrderService {
             let openid = zh[0].cookie.match(/midas_txcz_openid=([a-z,A-Z,0-9]+)/)[1];
             let openkey = zh[0].cookie.match(/midas_txcz_openkey=([a-z,A-Z,0-9]+)/)[1];
             let translist = await this.zhEX.checktranslist(openid, openkey, r[0].zh);
-            if (translist.indexOf(r[0].oid) > -1) {
+            if (translist && translist.indexOf(r[0].oid) > -1) {
                 let arr = [
                     `UPDATE top_order SET result = 1,err_info='支付到账' WHERE tid = '${query.tid}' ${this.isAdmin(user)}`,
                     `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${query.tid}' ${this.isAdmin(user)} )b ON a.oid = b.oid  SET result = 1,tid = '${query.tid}'  `

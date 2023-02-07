@@ -289,7 +289,7 @@ let ApiService = class ApiService {
                 let openkey = openkeyArray.length > 1 ? openkeyArray[1] : common_1.Logger.error("无法找到匹配的openkey");
                 let translist = await this.zhEX.checktranslist(openid, openkey, r[0].zh);
                 let ispay = 0;
-                if (typeof translist == 'string' && translist.indexOf(r[0].oid) > -1) {
+                if (translist && translist.indexOf(r[0].oid) > -1) {
                     let arr = [
                         `UPDATE top_order SET result = 1,err_info='支付到账' WHERE tid = '${body.orderId}'`,
                         `UPDATE paylink AS a JOIN (SELECT top_order.oid FROM top_order WHERE tid = '${body.orderId}')b ON a.oid = b.oid  SET result = 1,tid = '${body.orderId}'  `,
