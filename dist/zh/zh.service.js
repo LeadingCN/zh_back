@@ -54,15 +54,37 @@ let ZhService = class ZhService {
         return error.length > 0 ? error : 'ok';
     }
     async findAll(params, user) {
+        console.log("params", params);
         let { channelsub } = params;
         let channelsubsql = channelsub ? ` AND mark = '${channelsub == '未设置' ? '' : channelsub}'` : '';
         let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_table} WHERE (zh LIKE '%${params.keyword ? params.keyword : ''}%' or zid LIKE '%${params.keyword ? params.keyword : ''}%') AND is_delete = 0 
       ${channelsubsql}
       ${this.isAdmin(user)}
       `);
-        let r = await this.sql.query(`SELECT * FROM ${this.zh_table} WHERE (zh LIKE '%${params.keyword ? params.keyword : ''}%' or zid LIKE '%${params.keyword ? params.keyword : ''}%') AND is_delete = 0  ${channelsubsql}
-       ${this.isAdmin(user)}
-      LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}`);
+        let r = await this.sql.query(`SELECT zh.*,
+SUM(DISTINCT CASE WHEN top_order.create_time >= CURDATE() AND top_order.create_time < NOW() AND top_order.result = 1 THEN top_order.totalquota ELSE 0 END) AS today_quota,
+SUM( DISTINCT CASE WHEN top_order.create_time >= CURDATE() - INTERVAL 1 DAY AND top_order.create_time < CURDATE() AND top_order.result = 1 THEN top_order.totalquota ELSE 0 END) AS yesterday_quota,
+paylink.link_count AS link_count,
+SUM(DISTINCT CASE WHEN paylink.is_delete = 0 AND paylink.create_status = 1 THEN paylink.totalquota ELSE 0 END) AS link_total_quota
+FROM zh
+LEFT JOIN (
+SELECT zh, create_time,result,sum(quota) AS totalquota
+FROM top_order
+WHERE result = 1
+GROUP by zh
+)top_order ON zh.zh = top_order.zh
+LEFT JOIN (
+SELECT zh, SUM(quota) AS totalquota,is_delete,create_status,result,id,COUNT(id) AS link_count
+FROM paylink
+WHERE is_delete = 0 AND create_status = 1
+GROUP by zh
+)paylink ON zh.zh = paylink.zh
+WHERE 
+(zh.zh LIKE '%${params.keyword ? params.keyword : ''}%' or zh.zid LIKE '%${params.keyword ? params.keyword : ''}%') AND zh.is_delete = 0  ${channelsubsql}
+       ${this.isAdmin(user)} 
+GROUP BY zh.zh
+LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}
+;`);
         return {
             total: total[0].count,
             list: r,
