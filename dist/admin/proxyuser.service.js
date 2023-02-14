@@ -35,12 +35,12 @@ let ProxyUserService = class ProxyUserService {
      ${adminsql}`);
         let r = await this.sql.query(`SELECT ${user.roles == 'admin' ? 'adminuser.*' : 'adminuser.uid, adminuser.username,adminuser.nickName,adminuser.uid,adminuser.quota,adminuser.up_open'}
 
-FROM adminuser
+      FROM adminuser
       WHERE (username LIKE '%${keyword ? keyword : ''}%'  OR nickName LIKE '%${keyword ? keyword : ''}%')
       ${uidsql}
       ${isdelsql}
       ${adminsql}
-      GROUP BY adminuser.uid
+      
       LIMIT ${(pageNum - 1) * pageSize},${pageSize}`);
         for (let i = 0; i < r.length; i++) {
             common_1.Logger.log(`SELECT SUM(quota) AS quota FROM top_order WHERE uid = '${r[i].uid}' AND result = 1 AND create_time >=  CURDATE() - INTERVAL 1 DAY AND create_time < CURDATE()`);
