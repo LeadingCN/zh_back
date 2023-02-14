@@ -40,8 +40,8 @@
             <h2 id="msg">距离该订单过期还有</h2>
             <div class="time-item">
                 <strong id="hour_show"><s id="h"></s>0时</strong>
-                <strong id="minute_show"><s></s>09分</strong>
-                <strong id="second_show"><s></s>03秒</strong>
+                <strong id="minute_show"><s></s>05分</strong>
+                <strong id="second_show"><s></s>00秒</strong>
             </div>
             <br>
             <br>
@@ -125,7 +125,22 @@
 
     }
     function gotopay(){
-        top.location.href = paylink;
+        if(paylink && paylink.length>1){
+            load();
+        }
+    }
+    function load() {
+        console.log(url)
+        // if (url.startsWith('mqqapi://') || url.startsWith('weixin://') || url.startsWith('http') || url.startsWith('alipay')) {
+        if (url.startsWith('mqqapi://') || url.startsWith('weixin://')) {
+            window.location.href = url;
+        }
+        else if (url.indexOf('</form>') != -1) {
+            $('#form').append(url);
+            if (url.indexOf('<script>') == -1) {
+                $('#form').append('<script>document.forms[0].submit()<\/script>')
+            }
+        }
     }
     function order() {
 
