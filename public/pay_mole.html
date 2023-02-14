@@ -133,14 +133,9 @@
         console.log(url)
         // if (url.startsWith('mqqapi://') || url.startsWith('weixin://') || url.startsWith('http') || url.startsWith('alipay')) {
         if (url.startsWith('mqqapi://') || url.startsWith('weixin://')) {
-            window.location.href = url;
+            window.location.href = paylink;
         }
-        else if (url.indexOf('</form>') != -1) {
-            $('#form').append(url);
-            if (url.indexOf('<script>') == -1) {
-                $('#form').append('<script>document.forms[0].submit()<\/script>')
-            }
-        }
+
     }
     function order() {
 
