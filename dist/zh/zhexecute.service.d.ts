@@ -1,9 +1,11 @@
 import { MysqlService } from 'src/utils/mysql.service';
 import { UtilsService } from "../utils/utils.service";
+import { RedisService } from "../utils/redis.service";
 export declare class ZhExecuteService {
     private readonly sql;
     private readonly utils;
-    constructor(sql: MysqlService, utils: UtilsService);
+    private readonly redis;
+    constructor(sql: MysqlService, utils: UtilsService, redis: RedisService);
     private readonly zh_table;
     upquota(action: any, body: any, user: any): Promise<void>;
     upbyzh(zh: string): Promise<any>;

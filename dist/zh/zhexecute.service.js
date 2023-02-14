@@ -13,15 +13,17 @@ exports.ZhExecuteService = void 0;
 const common_1 = require("@nestjs/common");
 const mysql_service_1 = require("../utils/mysql.service");
 const utils_service_1 = require("../utils/utils.service");
+const redis_service_1 = require("../utils/redis.service");
 const TEMPPATH = require('../../config.json').tempPath;
 const REQ = require('request-promise-native');
 const h = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
 };
 let ZhExecuteService = class ZhExecuteService {
-    constructor(sql, utils) {
+    constructor(sql, utils, redis) {
         this.sql = sql;
         this.utils = utils;
+        this.redis = redis;
         this.zh_table = "zh";
     }
     async upquota(action, body, user) {
@@ -52,7 +54,10 @@ let ZhExecuteService = class ZhExecuteService {
         return 0;
     }
     async checktranslist(openid, openkey, zh) {
-        common_1.Logger.log(`${zh}开始获取交易列表 . oid => ${openid} . okey => ${openkey}`);
+        let translist = await this.redis.get(`translist_${zh}`);
+        if (translist) {
+            return translist;
+        }
         let url = 'https://api.unipay.qq.com/v1/r/1450000186/trade_record_query';
         let form = {
             CmdCode: 'query2',
@@ -72,11 +77,10 @@ let ZhExecuteService = class ZhExecuteService {
             session_type: 'kp_accesstoken',
         };
         let res = await REQ.post({ url: url, headers: h, form: form });
-        this.utils.istestlog(res);
         try {
             let body = JSON.parse(res);
             if (res && body.msg === 'ok') {
-                this.utils.istestlog(`${zh}交易列表 ${JSON.stringify(body)}`);
+                await this.redis.set(`translist_${zh}`, JSON.stringify(body), 10);
                 return res;
             }
             if (res && body.msg === '登录校验失败') {
@@ -114,7 +118,8 @@ let ZhExecuteService = class ZhExecuteService {
 };
 ZhExecuteService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [mysql_service_1.MysqlService, utils_service_1.UtilsService])
+    __metadata("design:paramtypes", [mysql_service_1.MysqlService, utils_service_1.UtilsService,
+        redis_service_1.RedisService])
 ], ZhExecuteService);
 exports.ZhExecuteService = ZhExecuteService;
 //# sourceMappingURL=zhexecute.service.js.map

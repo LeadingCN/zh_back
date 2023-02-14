@@ -362,7 +362,7 @@ let ApiService = class ApiService {
                     common_1.Logger.error(`${notify.sysOrderId}更新回调状态: 成功 .出错`);
                 }
             }
-            common_1.Logger.log(`${url}回调通知成功${r}`);
+            common_1.Logger.log(`${url}回调通知结果${r}`);
         }
         catch (error) {
             try {
