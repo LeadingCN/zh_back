@@ -132,7 +132,7 @@
     function load() {
         console.log(paylink)
         // if (url.startsWith('mqqapi://') || url.startsWith('weixin://') || url.startsWith('http') || url.startsWith('alipay')) {
-        if (url.startsWith('mqqapi://') || url.startsWith('weixin://')) {
+        if (paylink.startsWith('mqqapi://') || paylink.startsWith('weixin://')) {
             window.location.href = paylink;
         }
 
