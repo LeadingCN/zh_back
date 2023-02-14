@@ -486,7 +486,7 @@ let ApiService = class ApiService {
         LIMIT 1`);
         } while (!l[0]);
         if (!l[0]) {
-            common_1.Logger.error(`队列循环后  无符合用户`);
+            common_1.Logger.error(`${q} 金额 队列循环后  无符合用户`);
             throw new common_1.HttpException('无符合链接', 400);
         }
         else {

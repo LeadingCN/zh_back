@@ -94,7 +94,7 @@ let PayLinkService = class PayLinkService {
       ${queryTypesql}
       ${zhmarksql}
       AND is_delete = 0
-      ${this.isAdmin(user)}
+      ${user.roles != 'admin' ? ` AND paylink.uid = '${user.uid}'` : ''}
       ORDER BY create_status DESC
       LIMIT ${(pageNum - 1) * pageSize},${pageSize}`);
         return {

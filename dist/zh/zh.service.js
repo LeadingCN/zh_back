@@ -55,6 +55,7 @@ let ZhService = class ZhService {
     }
     async findAll(params, user) {
         console.log("params", params);
+        let link_outtime = await this.utils.getsetcache('link_outtime', 120);
         let { channelsub } = params;
         let channelsubsql = channelsub ? ` AND mark = '${channelsub == '未设置' ? '' : channelsub}'` : '';
         let total = await this.sql.query(`SELECT count(1) AS count FROM ${this.zh_table} WHERE (zh LIKE '%${params.keyword ? params.keyword : ''}%' or zid LIKE '%${params.keyword ? params.keyword : ''}%') AND is_delete = 0 
@@ -76,7 +77,7 @@ GROUP by zh
 LEFT JOIN (
 SELECT zh, SUM(quota) AS totalquota,is_delete,create_status,result,id,COUNT(id) AS link_count
 FROM paylink
-WHERE is_delete = 0 AND create_status = 1
+WHERE is_delete = 0 AND create_status = 1  AND paylink.create_time > FROM_UNIXTIME(unix_timestamp(now()) - ${link_outtime})
 GROUP by zh
 )paylink ON zh.zh = paylink.zh
 LEFT JOIN (
@@ -84,7 +85,7 @@ select uid,username from adminuser
 )adminuser ON zh.uid = adminuser.uid
 WHERE 
 (zh.zh LIKE '%${params.keyword ? params.keyword : ''}%' or zh.zid LIKE '%${params.keyword ? params.keyword : ''}%') AND zh.is_delete = 0  ${channelsubsql}
-       ${this.isAdmin(user)} 
+${user.roles != 'admin' ? ` AND zh.uid = '${user.uid}'` : ''}
 GROUP BY zh.zh
 LIMIT ${(params.pageNum - 1) * params.pageSize},${params.pageSize}
 ;`);

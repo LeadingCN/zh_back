@@ -97,7 +97,7 @@ let AdminService = class AdminService {
             LEFT JOIN ( 
             SELECT * FROM adminuser WHERE is_delete =0 AND pay_open = 1 AND up_open = 1 AND quota >= 1000*100
             )adminuser ON adminuser.uid = zh.uid
-            WHERE zh.enable = 1 AND adminuser.pay_open = 1 AND adminuser.up_open = 1 AND adminuser.quota >= 1000*100  AND  paylink.is_delete =0 AND paylink.result != 1 AND paylink.channel = 1 AND  paylink.lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND paylink.create_status = 1 ${uidsql} GROUP BY quota ;`;
+            WHERE zh.enable = 1 AND adminuser.pay_open = 1 AND adminuser.up_open = 1 AND adminuser.quota >= 1000*100  AND  paylink.is_delete =0 AND paylink.result != 1 AND paylink.channel = 1 AND  paylink.lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND paylink.create_status = 1 ${user.roles != 'admin' ? ` AND paylink.uid = '${user.uid}'` : ''} GROUP BY quota ;`;
             let linktotalclass = await this.sql.query(tsql);
             let linktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink 
             LEFT JOIN (
@@ -106,7 +106,7 @@ let AdminService = class AdminService {
             LEFT JOIN ( 
             SELECT * FROM adminuser WHERE is_delete =0 AND pay_open = 1 AND up_open = 1 AND quota >= 1000*100
             )adminuser ON adminuser.uid = zh.uid
-            WHERE zh.enable = 1 AND adminuser.pay_open = 1 AND adminuser.up_open = 1 AND adminuser.quota >= 1000*100  AND paylink.is_delete =0 AND paylink.result != 1 AND paylink.channel = 1 AND  paylink.lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND paylink.create_status = 1 ${uidsql};`);
+            WHERE zh.enable = 1 AND adminuser.pay_open = 1 AND adminuser.up_open = 1 AND adminuser.quota >= 1000*100  AND paylink.is_delete =0 AND paylink.result != 1 AND paylink.channel = 1 AND  paylink.lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND paylink.create_status = 1 ${user.roles != 'admin' ? ` AND paylink.uid = '${user.uid}'` : ''};`);
             let toptodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 AND channel = 1 ${uidsql}`);
             let topyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 AND channel = 1 ${uidsql}`);
             let paytodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 ${uidsql}`);
