@@ -16,6 +16,7 @@ export declare class Pay {
 export declare class GetPayUrl {
     orderid: string;
     channel: string;
+    action: string;
 }
 export declare class PayQuery {
     merId: string;

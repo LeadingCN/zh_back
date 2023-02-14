@@ -80,6 +80,10 @@ export declare class ApiService {
     amountRange(q: any): Promise<void>;
     getpayurl(body: GetPayUrl): Promise<{
         code: number;
+        msg?: undefined;
+        url?: undefined;
+    } | {
+        code: number;
         msg: string;
         url: string;
     }>;

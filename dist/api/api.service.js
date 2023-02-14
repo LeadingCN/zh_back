@@ -512,23 +512,55 @@ let ApiService = class ApiService {
         }
     }
     async getpayurl(body) {
-        let { orderid, channel } = body;
-        orderid = orderid.replace(/ /g, '').toLocaleLowerCase();
-        let order_info = await this.redis.get(orderid);
-        let code = 1, msg = '', url = '';
-        if (!order_info) {
-            code = 3;
-            msg = "订单超时,请重新拉取";
+        let { orderid, channel, action } = body;
+        if (action == "checkorder") {
+            let code = 0;
+            let order_info = await this.redis.get(orderid);
+            if (!order_info) {
+                return { code: -1 };
+            }
+            let orderinfo = await this.sql.query(`SELECT * FROM top_order WHERE tid = '${orderid}'`);
+            let yan = "";
+            if (orderinfo[0].merchant_id != '1') {
+                orderinfo[0].merchant_id = orderinfo[0].merchant_id.toString().replace ? orderinfo[0].merchant_id.toString().replace(/ /g, '') : orderinfo[0].merchant_id;
+                let tyan = await this.sql.query(`SELECT yan FROM user WHERE id = ${orderinfo[0].merchant_id}`);
+                if (tyan[0])
+                    yan = `&key=${tyan[0].yan}`;
+            }
+            let t = {
+                merId: orderinfo[0].merchant_id,
+                orderId: orderinfo[0].tid,
+                nonceStr: this.utils.randomString(16)
+            };
+            let sign = this.ascesign(t, yan);
+            t['sign'] = sign;
+            let qres = await this.payquery(t);
+            if (typeof qres == 'string') {
+                return { code: -1 };
+            }
+            if (qres.status == 0) {
+                code = -1;
+            }
+            return { code };
         }
-        else if (order_info == '0') {
-            code = 2;
+        else {
+            orderid = orderid.replace(/ /g, '').toLocaleLowerCase();
+            let order_info = await this.redis.get(orderid);
+            let code = 1, msg = '', url = '';
+            if (!order_info) {
+                code = 3;
+                msg = "订单超时,请重新拉取";
+            }
+            else if (order_info == '0') {
+                code = 2;
+            }
+            else if (order_info.indexOf('/') > -1) {
+                code = 0;
+                msg = "马上点击支付";
+                url = order_info;
+            }
+            return { code, msg, url };
         }
-        else if (order_info.indexOf('/') > -1) {
-            code = 0;
-            msg = "马上点击支付";
-            url = order_info;
-        }
-        return { code, msg, url };
     }
     ascesign(obj, yan) {
         let newData2 = {}, signData2 = [];

@@ -33,6 +33,10 @@ export declare class ApiController {
     getOneCreate(body: any, req: any): Promise<any>;
     getpayurl(body: GetPayUrl): Promise<{
         code: number;
+        msg?: undefined;
+        url?: undefined;
+    } | {
+        code: number;
         msg: string;
         url: string;
     }>;
