@@ -43,11 +43,8 @@ let ProxyUserService = class ProxyUserService {
       
       LIMIT ${(pageNum - 1) * pageSize},${pageSize}`);
         for (let i = 0; i < r.length; i++) {
-            common_1.Logger.log(`SELECT SUM(quota) AS quota FROM top_order WHERE uid = '${r[i].uid}' AND result = 1 AND create_time >=  CURDATE() - INTERVAL 1 DAY AND create_time < CURDATE()`);
             let yestoday = await this.sql.query(`SELECT SUM(quota) AS quota FROM top_order WHERE uid = '${r[i].uid}' AND result = 1 AND create_time >=  CURDATE() - INTERVAL 1 DAY AND create_time < CURDATE()`);
             let today = await this.sql.query(`SELECT SUM(quota) AS quota FROM top_order WHERE uid = '${r[i].uid}' AND result = 1 AND top_order.create_time >= CURDATE() AND top_order.create_time < NOW()`);
-            common_1.Logger.log(JSON.stringify(yestoday[0]));
-            common_1.Logger.log(JSON.stringify(today[0]));
             r[i].yesterday_quota = yestoday[0].quota ? yestoday[0].quota : 0;
             r[i].today_quota = today[0].quota ? today[0].quota : 0;
         }
