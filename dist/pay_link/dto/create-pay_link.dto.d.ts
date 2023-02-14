@@ -7,4 +7,5 @@ export declare class QueryList {
     queryType: string;
     zid: string;
     zhmark: string;
+    quota: number;
 }

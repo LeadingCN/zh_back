@@ -89,13 +89,42 @@ let AdminService = class AdminService {
             let ztotal = await this.sql.query(`SELECT COUNT(*) AS total,SUM(balance) AS toptotal FROM zh WHERE is_delete =0 ${uidsql}`);
             let pay_link_lock_time = await this.utils.getsetcache('pay_link_lock_time', 120);
             let stocklinktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND create_status = 1 ${uidsql};`);
-            let linktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND  lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1 ${uidsql};`);
             let stocklinktotalclass = await this.sql.query(`SELECT quota,COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND create_status = 1 ${uidsql} GROUP BY quota ;`);
-            let linktotalclass = await this.sql.query(`SELECT quota,COUNT(*) AS total FROM paylink WHERE is_delete =0 AND result != 1 AND channel = 1 AND  lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND create_status = 1 ${uidsql} GROUP BY quota ;`);
+            let tsql = `SELECT paylink.quota,COUNT(*) AS total FROM paylink 
+            LEFT JOIN (
+            SELECT * FROM zh WHERE is_delete =0  AND enable = 1 
+            )zh ON zh.zid = paylink.zid
+            LEFT JOIN ( 
+            SELECT * FROM adminuser WHERE is_delete =0 AND pay_open = 1 AND up_open = 1 AND quota >= 1000*100
+            )adminuser ON adminuser.uid = zh.uid
+            WHERE zh.enable = 1 AND adminuser.pay_open = 1 AND adminuser.up_open = 1 AND adminuser.quota >= 1000*100  AND  paylink.is_delete =0 AND paylink.result != 1 AND paylink.channel = 1 AND  paylink.lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND paylink.create_status = 1 ${uidsql} GROUP BY quota ;`;
+            let linktotalclass = await this.sql.query(tsql);
+            let linktotal = await this.sql.query(`SELECT COUNT(*) AS total FROM paylink 
+            LEFT JOIN (
+            SELECT * FROM zh WHERE is_delete =0  AND enable = 1 
+            )zh ON zh.zid = paylink.zid
+            LEFT JOIN ( 
+            SELECT * FROM adminuser WHERE is_delete =0 AND pay_open = 1 AND up_open = 1 AND quota >= 1000*100
+            )adminuser ON adminuser.uid = zh.uid
+            WHERE zh.enable = 1 AND adminuser.pay_open = 1 AND adminuser.up_open = 1 AND adminuser.quota >= 1000*100  AND paylink.is_delete =0 AND paylink.result != 1 AND paylink.channel = 1 AND  paylink.lock_time < FROM_UNIXTIME(unix_timestamp(now()) - ${pay_link_lock_time}) AND paylink.create_status = 1 ${uidsql};`);
             let toptodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 AND channel = 1 ${uidsql}`);
             let topyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  top_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 AND channel = 1 ${uidsql}`);
             let paytodaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(create_time) = TO_DAYS(NOW()) AND result = 1 ${uidsql}`);
             let payyesterdaytotal = await this.sql.query(`SELECT COUNT(*) AS total ,SUM(quota) AS quotatotal FROM  sell_order WHERE TO_DAYS(NOW()) - TO_DAYS(create_time) = 1 AND result = 1 ${uidsql}`);
+            let linktotalclassarr = [];
+            for (let i = 0; i < stocklinktotalclass.length; i++) {
+                let socktotal = 0;
+                for (let j = 0; j < linktotalclass.length; j++) {
+                    if (stocklinktotalclass[i].quota == linktotalclass[j].quota) {
+                        socktotal = linktotalclass[j].total;
+                    }
+                }
+                linktotalclassarr.push({
+                    quota: stocklinktotalclass[i].quota,
+                    total: stocklinktotalclass[i].total,
+                    socktotal: socktotal
+                });
+            }
             result = {
                 zhtotal: ztotal[0].total,
                 toptotal: ztotal[0].toptotal,
@@ -110,7 +139,8 @@ let AdminService = class AdminService {
                 linktotalclass: linktotalclass,
                 linktotal: linktotal[0].total,
                 stocklinktotal: stocklinktotal[0].total,
-                stocklinktotalclass
+                stocklinktotalclass,
+                linktotalclassarr
             };
             await this.redis.set('statictotal', JSON.stringify(result), 30);
         }

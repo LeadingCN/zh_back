@@ -61,7 +61,7 @@ let ZhService = class ZhService {
       ${channelsubsql}
       ${this.isAdmin(user)}
       `);
-        let r = await this.sql.query(`SELECT zh.*,
+        let r = await this.sql.query(`SELECT zh.*,adminuser.username,
 SUM(DISTINCT CASE WHEN top_order.create_time >= CURDATE() AND top_order.create_time < NOW() AND top_order.result = 1 THEN top_order.totalquota ELSE 0 END) AS today_quota,
 SUM( DISTINCT CASE WHEN top_order.create_time >= CURDATE() - INTERVAL 1 DAY AND top_order.create_time < CURDATE() AND top_order.result = 1 THEN top_order.totalquota ELSE 0 END) AS yesterday_quota,
 paylink.link_count AS link_count,
@@ -79,6 +79,9 @@ FROM paylink
 WHERE is_delete = 0 AND create_status = 1
 GROUP by zh
 )paylink ON zh.zh = paylink.zh
+LEFT JOIN (
+select uid,username from adminuser
+)adminuser ON zh.uid = adminuser.uid
 WHERE 
 (zh.zh LIKE '%${params.keyword ? params.keyword : ''}%' or zh.zid LIKE '%${params.keyword ? params.keyword : ''}%') AND zh.is_delete = 0  ${channelsubsql}
        ${this.isAdmin(user)} 
