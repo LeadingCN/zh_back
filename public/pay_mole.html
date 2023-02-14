@@ -20,12 +20,12 @@
             <p>无法充值或者提示错误,请联系客服!</p>
             <p>已开启支付安全/自助充值中心</p>
         </div>
-        <div id="amount" class="amount">￥100</div>
+        <div id="amount" class="amount"></div>
         <br>
         <br>
         <div class="buy">
             <button type="button" class="btn bg-blue wfull"
-                    onclick="">
+                    onclick="gotopay">
                 前往QQ钱包付款
             </button>
             <p>一键唤醒QQ钱包H5支付</p><br><br>
@@ -69,7 +69,8 @@
     GetPayUrl();
     if (!orderid) {
         document.getElementById('content').innerHTML = '<div>无订单号,请从新获取</div>';
-    }else {
+    }
+    else {
         layer.confirm("支付完成后，请点击红色按钮确认是否到账", {
             icon: 1,
             title: '支付提示',
@@ -123,7 +124,9 @@
         })
 
     }
-
+    function gotopay(){
+        top.location.href = paylink;
+    }
     function order() {
 
         $.post('/api/getpayurl', {action:'checkorder', orderid: orderid, channel: 1 }, function (result) {
