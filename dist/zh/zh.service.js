@@ -28,13 +28,10 @@ let ZhService = class ZhService {
         this.zh_table = "zh";
     }
     async create(body, user) {
-        common_1.Logger.log(body);
         common_1.Logger.log(TEMPPATH);
         let fp = (0, path_1.join)(TEMPPATH, body.filenamelist[0].filename);
         let fd = await fsp.readFile(fp);
-        common_1.Logger.log(fp);
         let cookieArray = fd.toString().split('\r\n');
-        common_1.Logger.log(cookieArray);
         let i = 0;
         let datasql = [], error = [];
         cookieArray.forEach(e => {
